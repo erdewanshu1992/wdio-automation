@@ -324,128 +324,89 @@ name: Mobile Automation CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main ]
   pull_request:
-    branches: [main, develop]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
-  test:
+  android:
+    name: Run Android Tests
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        type: [android, browser]
-
     steps:
-      # ---------------------------
-      # 1. Checkout Code
-      # ---------------------------
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # ---------------------------
-      # 2. Setup Node
-      # ---------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.5'
-          cache: 'npm'
+          node-version: 20
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      # ---------------------------
-      # 3. Setup Java (only for Android)
-      # ---------------------------
-      - name: Setup Java
-        if: matrix.type == 'android'
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      # ✔ No manual download needed
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      # ---------------------------
-      # 4. Install Android SDK
-      # ---------------------------
-      - name: Install Android SDK (full)
-        if: matrix.type == 'android'
+      # ✔ Create AVD using Google API 35
+      - name: Create emulator
         run: |
-          sudo apt-get update
-          sudo apt-get install unzip -y
+          echo "no" | avdmanager create avd \
+            --force --name test \
+            --device "pixel" \
+            --package "system-images;android-35;google_apis;x86_64"
 
-          # Download CMD tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          mkdir -p $HOME/android-sdk
-          unzip cmdtools.zip -d $HOME/android-sdk
-
-          # Move to proper place
-          mkdir -p $HOME/android-sdk/cmdline-tools/latest
-          mv $HOME/android-sdk/cmdline-tools/* $HOME/android-sdk/cmdline-tools/latest
-
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
-
-      # ---------------------------
-      # 5. Install required SDK components
-      # ---------------------------
-      - name: Install SDK Components
-        if: matrix.type == 'android'
-        run: |
-          sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64" "emulator"
-
-      # ---------------------------
-      # 6. Create AVD
-      # ---------------------------
-      - name: Create AVD
-        if: matrix.type == 'android'
-        run: echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64"
-
-      # ---------------------------
-      # 7. Start Emulator
-      # ---------------------------
       - name: Start Emulator
-        if: matrix.type == 'android'
         run: |
-          nohup $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -no-boot-anim &
-
-      # ---------------------------
-      # 8. Wait for Emulator Boot
-      # ---------------------------
-      - name: Wait for Emulator
-        if: matrix.type == 'android'
-        run: |
+          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window -no-audio -gpu swiftshader_indirect &
           adb wait-for-device
           adb devices
-          sleep 20
 
-      # ---------------------------
-      # 9. Setup Appium
-      # ---------------------------
       - name: Setup Appium
-        if: matrix.type == 'android'
         run: |
-          npm i -g appium
-          appium --version
+          npm run setup:appium
 
-      # ---------------------------
-      # 10. Run Tests
-      # ---------------------------
-      - name: Run Tests (Android / Browser)
+      - name: Run WDIO Android Tests
         run: |
-          if [ "${{ matrix.type }}" = "android" ]; then
-            PLATFORM=android ENVIRONMENT=local npx wdio
-          else
-            PLATFORM=browser ENVIRONMENT=local npx wdio
-          fi
+          PLATFORM=android ENVIRONMENT=local npx wdio run wdio.conf.js
 
-      # ---------------------------
-      # 11. Upload Allure Results
-      # ---------------------------
-      - name: Upload Allure Results
-        uses: actions/upload-artifact@v4
+      - name: Upload artifacts
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: allure-results-${{ matrix.type }}
-          path: allure-results/
+          name: android-test-results
+          path: |
+            allure-results/
+            logs/
+            screenshots/
+
+  browser:
+    name: Run Browser Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run WDIO Browser Tests
+        run: |
+          PLATFORM=browser ENVIRONMENT=local npx wdio run wdio.conf.js
+
+      - name: Upload Browser Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: |
+            allure-results/
+            logs/
+            screenshots/
