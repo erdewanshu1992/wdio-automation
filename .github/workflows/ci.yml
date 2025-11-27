@@ -330,144 +330,103 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Run Tests
+  test-android:
+    name: Run Tests (android)
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        platform: [android, browser]
-
     steps:
-      # ---------------------
-      # 1. Checkout
-      # ---------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---------------------
-      # 2. Setup Node
-      # ---------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.19.5'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      # ---------------------
-      # 3. Setup Java for Android
-      # ---------------------
-      - name: Setup Java (Android only)
-        if: matrix.platform == 'android'
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
-      # ---------------------
-      # 4. Install Android SDK
-      # ---------------------
-      - name: Install Android SDK
-        if: matrix.platform == 'android'
+      - name: Download Android cmdline-tools
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y unzip wget
-          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O cmdtools.zip
-          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
-          sudo unzip cmdtools.zip -d /usr/lib/android-sdk/cmdline-tools
-          sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
+          sudo mkdir -p "$ANDROID_HOME/cmdline-tools"
+          cd "$ANDROID_HOME"
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip commandlinetools-linux-*.zip
+          sudo mv cmdline-tools cmdline-tools/latest
+          sudo chmod -R 777 $ANDROID_HOME
 
-          echo "export ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=\$PATH:\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator" >> $GITHUB_ENV
+      - name: Add SDKmanager tools to PATH
+        run: |
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
 
-      # ---------------------
-      # 5. Install required SDK packages
-      # ---------------------
       - name: Install SDK Components
-        if: matrix.platform == 'android'
         run: |
-          sdkmanager --install "platform-tools" \
-            "platforms;android-35" \
-            "system-images;android-35;google_apis;x86_64"
+          sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
 
-      # ---------------------
-      # 6. Create Emulator
-      # ---------------------
       - name: Create AVD
-        if: matrix.platform == 'android'
         run: |
-          echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "Pixel_6"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64"
 
-      # ---------------------
-      # 7. Start Emulator
-      # ---------------------
       - name: Start Emulator
-        if: matrix.platform == 'android'
         run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -noaudio -no-window &
-          sleep 5
-
-      # ---------------------
-      # 8. Wait for Boot
-      # ---------------------
-      - name: Wait for emulator to boot
-        if: matrix.platform == 'android'
-        run: |
+          nohup emulator -avd test -no-snapshot -no-audio -no-window &
           adb wait-for-device
-          adb shell getprop sys.boot_completed
-          until adb shell getprop sys.boot_completed | grep "1"; do
-            echo "⏳ Waiting for emulator..."
-            sleep 5
-          done
-          echo "Emulator booted!"
+          adb devices
 
-      # ---------------------
-      # 9. Setup Appium
-      # ---------------------
       - name: Setup Appium
         run: |
-          npm run setup:appium || true
+          npm run setup:appium
           npx appium --version
 
-      # ---------------------
-      # 10. Run Tests
-      # ---------------------
-      - name: Run WDIO tests
+      - name: Run WDIO Tests
         run: |
-          if [ "${{ matrix.platform }}" = "android" ]; then
-            PLATFORM=android ENVIRONMENT=local npx wdio
-          else
-            PLATFORM=browser ENVIRONMENT=local npx wdio
-          fi
-        continue-on-error: true
+          PLATFORM=android ENVIRONMENT=local npx wdio
 
-      # ---------------------
-      # 11. Upload Results
-      # ---------------------
-      - name: Upload artifacts
+      - name: Upload test artifacts
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: results-${{ matrix.platform }}
+          name: android-artifacts
           path: |
             allure-results/
             screenshots/
             logs/
 
-      # ---------------------
-      # 12. Generate Allure Report
-      # ---------------------
       - name: Generate Allure Report
-        if: always()
-        run: |
-          npm run report:allure || true
+        run: npm run report:allure || true
 
-      - name: Upload Allure Report
-        uses: actions/upload-artifact@v4
-        if: always()
+  test-browser:
+    name: Run Tests (browser)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: allure-${{ matrix.platform }}
-          path: allure-report/
+          node-version: '20.19.5'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run browser tests
+        run: |
+          PLATFORM=browser ENVIRONMENT=local npx wdio
+
+      - name: Upload browser artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-artifacts
+          path: |
+            allure-results/
+            screenshots/
+            logs/
