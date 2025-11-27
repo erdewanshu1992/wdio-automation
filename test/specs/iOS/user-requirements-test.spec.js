@@ -3,18 +3,20 @@ import MobileGestures from '../../utils/mobileGestures.js';
 
 describe('SwagLabs Mobile App - iOS Tests', () => {
   before(async () => {
-    console.log('✅ Starting iOS test session...');
+    console.log('Starting iOS test session...');
     console.log('ENV:', process.env.ENVIRONMENT || 'local');
     console.log('PLATFORM:', process.env.PLATFORM);
   });
 
   beforeEach(async () => {
-    await browser.pause(2000);
-    console.log('✅ App ready');
+    await browser.waitUntil(async () => {
+      return (await $('~test-Username')).isDisplayed();
+    }, { timeout: 10000 });
+    console.log('App ready');
   });
 
   it('should perform basic gestures', async () => {
-    console.log('✅ Starting gesture test');
+    console.log('Starting gesture test');
 
     const username = await $('~test-Username');
     await username.setValue('standard_user');
@@ -40,10 +42,10 @@ describe('SwagLabs Mobile App - iOS Tests', () => {
       await MobileGestures.scrollUntilVisible('Chai', 'down');
     }
 
-    console.log('✅ Gesture test completed');
+    console.log('Gesture test completed');
   });
 
   after(async () => {
-    console.log('✅ iOS test session completed');
+    console.log('iOS test session completed');
   });
 });

@@ -25,7 +25,7 @@ class BaseTest {
       // Ignore for mobile tests
     }
 
-    console.log('Test setup completed');
+    console.log('\x1b[32mTest setup completed\x1b[0m');
   }
 
   /**
@@ -40,14 +40,14 @@ class BaseTest {
     // Clear test data
     this.testData = {};
 
-    console.log('Test cleanup completed');
+    console.log('\x1b[32mTest cleanup completed\x1b[0m');
   }
 
   /**
    * Setup before test suite
    */
   async beforeSuite() {
-    console.log('Starting test suite...');
+    console.log('\x1b[34mStarting test suite...\x1b[0m');
 
     // Load environment-specific configuration
     this.loadEnvironmentConfig();
@@ -60,7 +60,7 @@ class BaseTest {
    * Cleanup after test suite
    */
   async afterSuite() {
-    console.log('Test suite completed');
+    console.log('\x1b[32mTest suite completed\x1b[0m');
 
     // Generate final reports
     await this.generateFinalReport();
@@ -71,7 +71,7 @@ class BaseTest {
    */
   loadEnvironmentConfig() {
     const env = process.env.ENVIRONMENT || 'local';
-    console.log(`Loading configuration for environment: ${env}`);
+    console.log(`\x1b[36mLoading configuration for environment: ${env}\x1b[0m`);
 
     // Environment-specific settings can be loaded here
     switch (env) {
@@ -135,7 +135,7 @@ class BaseTest {
       const filepath = `${this.screenshotDir}/${filename}`;
 
       await browser.saveScreenshot(filepath);
-      console.log(`Screenshot saved: ${filepath}`);
+      console.log(`\x1b[32mScreenshot saved: ${filepath}\x1b[0m`);
 
       // Attach to Allure report
       if (global.allure) {
@@ -154,7 +154,7 @@ class BaseTest {
    * @param {Function} stepFunction - Function to execute
    */
   async addStep(stepName, stepFunction) {
-    console.log(`Step: ${stepName}`);
+    console.log(`\x1b[36mStep: ${stepName}\x1b[0m`);
 
     if (global.allure) {
       global.allure.startStep(stepName);
@@ -227,8 +227,8 @@ class BaseTest {
 
         if (attempt < maxRetries) {
           const delay = baseDelay * Math.pow(2, attempt - 1);
-          console.log(`Retrying in ${delay}ms...`);
-          await browser.pause(delay);
+          console.log(`\x1b[33mRetrying in ${delay}ms...\x1b[0m`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
@@ -237,13 +237,26 @@ class BaseTest {
   }
 
   /**
-   * Log test information
+   * Log test information with color coding
    * @param {string} level - Log level (INFO, WARN, ERROR)
    * @param {string} message - Log message
    */
   log(level, message) {
     const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [${level}] ${message}`);
+
+    // ANSI color codes
+    const colors = {
+      INFO: '\x1b[34m',    // Blue
+      WARN: '\x1b[33m',    // Yellow
+      ERROR: '\x1b[31m',   // Red
+      SUCCESS: '\x1b[32m', // Green
+      DEBUG: '\x1b[35m'    // Magenta
+    };
+
+    const color = colors[level] || '\x1b[37m'; // White for unknown levels
+    const reset = '\x1b[0m';
+
+    console.log(`${color}[${timestamp}] [${level}] ${message}${reset}`);
 
     // Add to Allure report
     if (global.allure) {
@@ -274,14 +287,15 @@ class BaseTest {
    * @param {string} elementName - Name for error message
    */
   async assertTextContains(element, expectedText, elementName = 'Element') {
+    let actualText;
     try {
-      const actualText = await element.getText();
+      actualText = await element.getText();
       expect(actualText).toContain(expectedText);
       this.log('INFO', `${elementName} contains expected text: ${expectedText}`);
     } catch (error) {
       await this.takeScreenshot(`${elementName.toLowerCase()}_text_mismatch`);
       throw new Error(
-        `${elementName} text mismatch. Expected to contain: ${expectedText}, Actual: ${actualText}`
+        `${elementName} text mismatch. Expected to contain: ${expectedText}, Actual: ${actualText || 'Unable to retrieve text'}`
       );
     }
   }

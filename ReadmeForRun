@@ -17,6 +17,9 @@ PLATFORM=android npx wdio
 RUN ALL TESTS
 PLATFORM=browser npx wdio
 
+OR For all tests
+npm run test:all
+
 
 
 

@@ -55,8 +55,8 @@ export default new BaseConfig({
 
                 console.log(
                     installed
-                        ? `✅ App already installed on ${device.udid} — launching via appPackage`
-                        : `📦 App not installed on ${device.udid} — installing APK`
+                        ? `\x1b[32mApp already installed on ${device.udid} — launching via appPackage\x1b[0m`
+                        : `\x1b[33mApp not installed on ${device.udid} — installing APK\x1b[0m`
                 );
 
                 return installed

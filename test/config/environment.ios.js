@@ -8,7 +8,7 @@ function getIPA() {
     const appDir = path.resolve(process.cwd(), 'app/iOS');
 
     if (!existsSync(appDir)) {
-        console.warn(`⚠️ iOS app folder not found at: ${appDir}`);
+        console.warn(`iOS app folder not found at: ${appDir}`);
         return null;
     }
 
@@ -55,8 +55,8 @@ export default new BaseConfig({
 
             console.log(
                 installed
-                    ? `✅ App already installed on ${device.name} — launching via bundleId`
-                    : `📦 Installing app on ${device.name} from IPA`
+                    ? `\x1b[32mApp already installed on ${device.name} — launching via bundleId\x1b[0m`
+                    : `\x1b[33mInstalling app on ${device.name} from IPA\x1b[0m`
             );
 
             return installed

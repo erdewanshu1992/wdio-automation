@@ -9,7 +9,7 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
 
   describe('Essential Login Flow', () => {
     it('should complete essential login flow with exact locators', async () => {
-      console.log('Starting Enhanced Login Flow Test');
+        console.log('\x1b[34mStarting Enhanced Login Flow Test\x1b[0m');
 
       // STEP 1: Verify mobile input field
       const mobileInput = await $('android=new UiSelector().resourceId("mobileNumber")');
@@ -22,8 +22,9 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
         console.log('Get OTP clicked');
       }
 
-      await browser.pause(2000);
-      console.log('✅ LOGIN FLOW COMPLETED');
+      // Wait for potential UI changes after clicking Get OTP
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('\x1b[32mLOGIN FLOW COMPLETED\x1b[0m');
     });
 
     it('should test individual components', async () => {
@@ -47,9 +48,9 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
       valid.forEach(n => expect(LoginScreen.isValidMobileNumber(n)).toBe(true));
       invalid.forEach(n => expect(LoginScreen.isValidMobileNumber(n)).toBe(false));
 
-      console.log('✅ number validation done');
+      console.log('\x1b[32mnumber validation done\x1b[0m');
     });
   });
 
-  after(() => console.log('✅ Android test session completed'));
+  after(() => console.log('\x1b[32mAndroid test session completed\x1b[0m'));
 });

@@ -37,11 +37,11 @@ pipeline {
 
                     echo ""
                     echo "Checking simctl availability..."
-                    xcrun simctl list devices >/dev/null 2>&1 || echo "❌ simctl not found!"
+                    xcrun simctl list devices >/dev/null 2>&1 || echo "simctl not found!"
 
                     echo ""
                     echo "Booted iOS Simulators:"
-                    xcrun simctl list devices | grep Booted || echo "⚠️ No simulator currently booted!"
+                    xcrun simctl list devices | grep Booted || echo "No simulator currently booted!"
 
                     echo ""
                     echo "Available iOS Runtimes:"

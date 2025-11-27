@@ -1,15 +1,14 @@
-import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import EnvironmentConfig from './test/config/environment.android.js';
-import EnvironmentConfigIOS from './test/config/environment.ios.js';
-import EnvironmentConfigBrowser from './test/config/environment.browser.js';
+import EnvironmentConfig from '../../config/environment.android.js';
+import EnvironmentConfigIOS from '../../config/environment.ios.js';
+import EnvironmentConfigBrowser from '../../config/environment.browser.js';
 
 /**
  * Enhanced WebDriverIO Configuration
  * Supports multiple environments and advanced features
  */
 
-// ✅ Platform detection must come first before any usage
+// Platform detection must come first before any usage
 const isAndroid =
   process.env.PLATFORM === 'android' ||
   process.argv.some(arg => arg.includes('android')) ||
@@ -43,11 +42,11 @@ if (isIOS) {
   envName = EnvironmentConfig.getEnvironmentName();
 }
 
-console.log(`Starting WebDriverIO tests in ${envName.toUpperCase()} environment`);
+console.log(`\x1b[34mStarting WebDriverIO tests in ${envName.toUpperCase()} environment\x1b[0m`);
 if (!isBrowser) {
-  console.log(`Appium server: ${envConfig.appium.host}:${envConfig.appium.port}`);
+  console.log(`\x1b[36mAppium server: ${envConfig.appium.host}:${envConfig.appium.port}\x1b[0m`);
 } else {
-  console.log(`Browser: ${envConfig.capabilities.browserName || 'Chrome'}`);
+  console.log(`\x1b[36mBrowser: ${envConfig.capabilities.browserName || 'Chrome'}\x1b[0m`);
 }
 
 /**
@@ -86,13 +85,13 @@ export const config = {
   // Test Specifications - Platform specific => Ternary operator in place of multiple if-else statements ( condition ? valueIfTrue : valueIfFalse )
   specs: isIOS
     ? process.env.MOBILE_WEB === 'true'
-      ? ['./test/specs/ios-mobile-web/**/*.js']
-      : ['./test/specs/iOS/**/*.js']
+      ? ['../../specs/ios-mobile-web/**/*.js']
+      : ['../../specs/iOS/**/*.js']
     : isAndroid
       ? process.env.MOBILE_WEB === 'true'
-        ? ['./test/specs/android-mobile-web/**/*.js']
-        : ['./test/specs/android/**/*.js']
-      : ['./test/specs/browser/**/*.js'],
+        ? ['../../specs/android-mobile-web/**/*.js']
+        : ['../../specs/android/**/*.js']
+      : ['../../specs/browser/**/*.js'],
   // Exclude patterns
   exclude: [
     // Add any files to exclude
@@ -203,7 +202,7 @@ export const config = {
       'junit',
       {
         outputDir: './test-results/junit/',
-        outputFileFormat: function (options) {
+        outputFileFormat: function () {
           return `results-${envName}-${new Date().toISOString().split('T')[0]}.xml`;
         },
       },
@@ -221,18 +220,18 @@ export const config = {
 
   // Hooks
   beforeSession: function (config, capabilities, specs) {
-    console.log('Setting up test session...');
-    console.log('Test specs:', specs);
+    console.log('\x1b[34mSetting up test session...\x1b[0m');
+    console.log('\x1b[36mTest specs:\x1b[0m', specs);
   },
 
-  before: async function (capabilities, specs) {
-    console.log('Initializing test environment...');
+  before: async function (_capabilities, _specs, browser) {
+    console.log('\x1b[34mInitializing test environment...\x1b[0m');
 
     // Ensure required directories exist
     ensureDirectoriesExist();
 
     // Load custom commands
-    await import('./test/utils/enhanced-commands.js');
+    await import('../../utils/enhanced-commands.js');
 
     // Set timeouts
     await browser.setTimeout({
@@ -241,11 +240,11 @@ export const config = {
       script: envConfig.timeouts.script,
     });
 
-    console.log('Test environment ready');
+    console.log('\x1b[32mTest environment ready\x1b[0m');
   },
 
-  beforeTest: async function (test, context) {
-    console.log(`Starting test: ${test.title}`);
+  beforeTest: async function (test) {
+    console.log(`\x1b[34mStarting test: ${test.title}\x1b[0m`);
 
     // Take screenshot at test start if enabled and session is valid
     if (envConfig.reporting.enableScreenshots) {
@@ -266,9 +265,10 @@ export const config = {
     }
   },
 
-  afterTest: async function (test, context, { error, result, duration, passed, retries }) {
+  afterTest: async function (test, context, { error, duration, passed }) {
+    const statusColor = passed ? '\x1b[32m' : '\x1b[31m';
     console.log(
-      `Test completed: ${test.title} | Status: ${passed ? 'PASSED' : 'FAILED'} | Duration: ${duration}ms`
+      `${statusColor}Test completed: ${test.title} | Status: ${passed ? 'PASSED' : 'FAILED'} | Duration: ${duration}ms\x1b[0m`
     );
 
     // Take screenshot on failure if session is valid
@@ -291,15 +291,15 @@ export const config = {
     }
   },
 
-  afterHook: async function (test, context, { error, result, duration, passed, retries }) {
+  afterHook: async function (test, context, { error }) {
     // Handle hook failures
     if (error) {
-      console.error(`Hook failed: ${error.message}`);
+      console.error(`\x1b[31mHook failed: ${error.message}\x1b[0m`);
     }
   },
 
   onComplete: async function (exitCode, config, capabilities, results) {
-    console.log('Test execution completed');
+    console.log('\x1b[32mTest execution completed\x1b[0m');
 
     // Generate summary (handle cases where results might not be available)
     if (results && Array.isArray(results)) {
@@ -307,28 +307,28 @@ export const config = {
       const passedTests = results.filter(result => result.passed).length;
       const failedTests = totalTests - passedTests;
 
-      console.log(`Test Summary:`);
-      console.log(`   Total: ${totalTests}`);
-      console.log(`   Passed: ${passedTests}`);
-      console.log(`   Failed: ${failedTests}`);
+      console.log(`\x1b[36mTest Summary:\x1b[0m`);
+      console.log(`   \x1b[37mTotal: ${totalTests}\x1b[0m`);
+      console.log(`   \x1b[32mPassed: ${passedTests}\x1b[0m`);
+      console.log(`   \x1b[31mFailed: ${failedTests}\x1b[0m`);
       console.log(
-        `   Success Rate: ${totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(2) + '%' : 'N/A'}`
+        `   \x1b[36mSuccess Rate: ${totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(2) + '%' : 'N/A'}\x1b[0m`
       );
     } else {
-      console.log('Test results not available for summary');
+      console.log('\x1b[33mTest results not available for summary\x1b[0m');
     }
 
     // Environment-specific cleanup
     if (envConfig.reporting.enableScreenshots) {
-      console.log('Screenshots saved to: ./test-results/screenshots/');
+      console.log('\x1b[36mScreenshots saved to: ./test-results/screenshots/\x1b[0m');
     }
 
-    console.log('Allure results saved to: allure-results/');
-    console.log('JUnit results saved to: test-results/junit/');
+    console.log('\x1b[36mAllure results saved to: allure-results/\x1b[0m');
+    console.log('\x1b[36mJUnit results saved to: test-results/junit/\x1b[0m');
   },
 
   onError: async function (error) {
-    console.error('Test execution error:', error.message);
+    console.error('\x1b[31mTest execution error:\x1b[0m', error.message);
 
     // Take emergency screenshot if session is valid
     try {
@@ -337,7 +337,7 @@ export const config = {
       await browser.saveScreenshot(`./test-results/screenshots/error_${Date.now()}.png`);
     } catch (screenshotError) {
       console.error(
-        'Failed to take error screenshot - session not available:',
+        '\x1b[31mFailed to take error screenshot - session not available:\x1b[0m',
         screenshotError.message
       );
     }
