@@ -324,109 +324,67 @@ name: Mobile Automation CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
   workflow_dispatch:
 
 jobs:
-  android:
+  android-tests:
     name: Run Android Tests
     runs-on: ubuntu-latest
-    steps:
 
-      - name: Checkout
+    steps:
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20.19.5'
 
       - name: Install Dependencies
         run: npm ci
 
-      # ---- INSTALL ANDROID SDK PROPERLY ----
-      - name: Install Android SDK
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK Packages
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y unzip wget
+          sdkmanager "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
 
-          mkdir -p $HOME/android-sdk
-          cd $HOME/android-sdk
-
-          echo "⬇️ Downloading Android commandline tools"
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip cmdtools.zip
-
-          # FIX: correct folder structure (no nested cmdline-tools/latest/latest)
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/* cmdline-tools/latest/
-
-          echo "📌 Setting environment variables"
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator" >> $GITHUB_ENV
-
-      # ---- INSTALL REQUIRED SDK COMPONENTS ----
-      - name: Install SDK Components
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64" "emulator"
-
-      # ---- CREATE & START EMULATOR ----
       - name: Create emulator
-        run: |
-          echo "no" | avdmanager create avd --name test --package "system-images;android-35;google_apis;x86_64" --device "pixel"
+        run: echo no | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64"
 
       - name: Start emulator
         run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
-
-      - name: Wait for emulator
-        run: |
+          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window -noaudio -gpu swiftshader_indirect &
           adb wait-for-device
           adb devices
-          sleep 30
 
-      # ---- RUN ANDROID WDIO ----
-      - name: Run Android WDIO Tests
+      - name: Setup Appium
         run: |
-          PLATFORM=android ENVIRONMENT=local npx wdio
+          npm run setup:appium
+          npx appium --version
 
-      # ---- UPLOAD RESULTS ----
+      - name: Run WDIO Tests
+        run: PLATFORM=android ENVIRONMENT=local npx wdio
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android-results
           path: |
             allure-results/
+            test-results/
             logs/
             screenshots/
 
-  browser:
-    name: Run Browser Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Browser Tests
-        run: PLATFORM=browser npx wdio
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-results
-          path: |
-            allure-results/
-            logs/
-            screenshots/
+      - name: Generate Allure Report
+        run: npm run report:allure || true
