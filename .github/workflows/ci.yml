@@ -320,7 +320,79 @@
 
 
 
-name: Mobile Automation CI
+# name: Mobile Automation CI
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   android-tests:
+#     name: Run Android Tests
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Android Emulator + WDIO Tests
+#         uses: reactivecircus/android-emulator-runner@v2
+#         with:
+#           api-level: 35
+#           target: google_apis
+#           arch: x86_64
+#           profile: pixel_6
+#           emulator-options: -no-window -no-audio -gpu swiftshader_indirect
+#           script: |
+#             echo "Running WDIO Android tests..."
+#             PLATFORM=android ENVIRONMENT=local npx wdio
+
+#       - name: Upload Allure Results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-results-android
+#           path: allure-results/
+
+#   browser-tests:
+#     name: Run Browser Tests
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Browser Tests
+#         run: |
+#           PLATFORM=browser npx wdio
+
+#       - name: Upload Allure Results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-results-browser
+#           path: allure-results/
+
+
+
+name: Android + Browser CI
 
 on:
   push:
@@ -329,63 +401,130 @@ on:
     branches: [ main ]
 
 jobs:
-  android-tests:
+  android:
     name: Run Android Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Run Android Emulator + WDIO Tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          emulator-options: -no-window -no-audio -gpu swiftshader_indirect
-          script: |
-            echo "Running WDIO Android tests..."
-            PLATFORM=android ENVIRONMENT=local npx wdio
+      ########################################
+      ## ANDROID SDK + EMULATOR SETUP (FIXED)
+      ########################################
 
-      - name: Upload Allure Results
-        uses: actions/upload-artifact@v4
+      - name: Install Android SDK
+        run: |
+          sudo mkdir -p /usr/local/lib/android/sdk
+          sudo chown $USER:$USER /usr/local/lib/android/sdk
+
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip -d /usr/local/lib/android/sdk/
+          mkdir -p /usr/local/lib/android/sdk/cmdline-tools/latest
+          mv /usr/local/lib/android/sdk/cmdline-tools/* /usr/local/lib/android/sdk/cmdline-tools/latest/
+
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_ENV
+
+      - name: Install SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64" "emulator"
+
+      ##########################################################
+      ## CREATE AVD (FIXED — ensures system-image actually exists)
+      ##########################################################
+
+      - name: Create emulator
+        run: |
+          echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "pixel"
+
+      ##########################################
+      ## START EMULATOR (NO-KVM)
+      ##########################################
+
+      - name: Start emulator
+        run: |
+          $ANDROID_HOME/emulator/emulator \
+            -avd test \
+            -no-snapshot \
+            -no-window \
+            -gpu swiftshader_indirect \
+            -noaudio \
+            -accel off &
+
+          echo "Waiting for Android boot..."
+          adb wait-for-device
+          until adb shell getprop sys.boot_completed | grep -m 1 "1"; do
+            sleep 5
+          done
+          echo "Android booted!"
+
+      ##########################################
+      ## SETUP APPIUM
+      ##########################################
+
+      - name: Setup Appium
+        run: |
+          npm i -g appium
+          appium --version
+
+      - name: Run WDIO Tests
+        run: |
+          PLATFORM=android ENVIRONMENT=local npx wdio run wdio.conf.js
+
+      - name: Upload artifacts
         if: always()
+        uses: actions/upload-artifact@v3
         with:
-          name: allure-results-android
-          path: allure-results/
+          name: android-results
+          path: |
+            allure-results/
+            logs/
+            screenshots/
 
-  browser-tests:
+  ##########################################
+  ## BROWSER JOB (CHROME FIXED)
+  ##########################################
+
+  browser:
     name: Run Browser Tests
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Run Browser Tests
-        run: |
-          PLATFORM=browser npx wdio
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
 
-      - name: Upload Allure Results
-        uses: actions/upload-artifact@v4
+      - name: Install ChromeDriver
+        uses: nanasess/setup-chromedriver@v1
+
+      - name: Run WDIO Browser Tests
+        run: |
+          PLATFORM=browser ENVIRONMENT=local npx wdio run wdio.conf.js
+
+      - name: Upload browser artifacts
         if: always()
+        uses: actions/upload-artifact@v3
         with:
-          name: allure-results-browser
-          path: allure-results/
+          name: browser-results
+          path: |
+            allure-results/
+            logs/
+            screenshots/
