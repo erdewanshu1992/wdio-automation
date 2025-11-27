@@ -37,27 +37,27 @@ export const config = {
     maxInstances: platform === 'browser' ? 1 : devices.filter(d => d.platform === platform).length,
 
     capabilities: platform === 'browser' ? 
-        [
-            { browserName: 'chrome', maxInstances: 1 },
-            { browserName: 'firefox', maxInstances: 1 }
-        ]
-
         // [
-        //     {
-        //         browserName: 'chrome',
-        //         maxInstances: 1,
-        //         'goog:chromeOptions': {
-        //             args: ['--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage']
-        //         }
-        //     },
-        //     {
-        //         browserName: 'firefox',
-        //         maxInstances: 1,
-        //         'moz:firefoxOptions': {
-        //             args: ['-headless']
-        //         }
-        //     },
+        //     { browserName: 'chrome', maxInstances: 1 },
+        //     { browserName: 'firefox', maxInstances: 1 }
         // ]
+
+        [
+            {
+                browserName: 'chrome',
+                maxInstances: 1,
+                'goog:chromeOptions': {
+                    args: ['--headless', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage']
+                }
+            },
+            {
+                browserName: 'firefox',
+                maxInstances: 1,
+                'moz:firefoxOptions': {
+                    args: ['-headless']
+                }
+            },
+        ]
         
         : devices
             .filter(d => d.platform === platform)
