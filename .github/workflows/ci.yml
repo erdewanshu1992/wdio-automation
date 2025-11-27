@@ -88,12 +88,14 @@ jobs:
       - name: Setup Android SDK
         if: matrix.platform == 'android'
         uses: android-actions/setup-android@v3
+        with:
+          api-level: 35
 
       - name: Start Android emulator
         if: matrix.platform == 'android'
         run: |
-          echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --install 'system-images;android-29;google_apis;x86'
-          echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test -k 'system-images;android-29;google_apis;x86'
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install 'system-images;android-35;google_apis;x86'
+          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k 'system-images;android-35;google_apis;x86'
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
 
       - name: Setup Appium
