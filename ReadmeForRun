@@ -14,6 +14,8 @@ OR
 android
 PLATFORM=android npx wdio
 
+RUN ALL TESTS
+PLATFORM=browser npx wdio
 
 
 
@@ -25,8 +27,7 @@ PLATFORM=browser BROWSER=firefox npx wdio
 OR
 PLATFORM=browser BROWSER=safari npx wdio
 
-RUN ALL TESTS
-PLATFORM=browser npx wdio
+
 
 
 
