@@ -320,14 +320,13 @@
 
 
 
-name: Mobile Automation CI/CD
+name: Mobile Automation CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   android-tests:
@@ -335,56 +334,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.5'
+          node-version: '20'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Run Android Emulator + WDIO Tests
+        uses: reactivecircus/android-emulator-runner@v2
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -no-audio -gpu swiftshader_indirect
+          script: |
+            echo "Running WDIO Android tests..."
+            PLATFORM=android ENVIRONMENT=local npx wdio
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK Packages
-        run: |
-          sdkmanager "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
-
-      - name: Create emulator
-        run: echo no | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64"
-
-      - name: Start emulator
-        run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window -noaudio -gpu swiftshader_indirect &
-          adb wait-for-device
-          adb devices
-
-      - name: Setup Appium
-        run: |
-          npm run setup:appium
-          npx appium --version
-
-      - name: Run WDIO Tests
-        run: PLATFORM=android ENVIRONMENT=local npx wdio
-
-      - name: Upload artifacts
+      - name: Upload Allure Results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: android-results
-          path: |
-            allure-results/
-            test-results/
-            logs/
-            screenshots/
+          name: allure-results-android
+          path: allure-results/
 
-      - name: Generate Allure Report
-        run: npm run report:allure || true
+  browser-tests:
+    name: Run Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Browser Tests
+        run: |
+          PLATFORM=browser npx wdio
+
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-browser
+          path: allure-results/
