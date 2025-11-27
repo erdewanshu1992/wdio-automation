@@ -320,113 +320,132 @@
 
 
 
-name: Mobile Automation CI/CD
+name: Mobile Automation CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
-  test-android:
-    name: Run Tests (android)
+  test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        type: [android, browser]
+
     steps:
-      - name: Checkout code
+      # ---------------------------
+      # 1. Checkout Code
+      # ---------------------------
+      - name: Checkout Code
         uses: actions/checkout@v4
 
+      # ---------------------------
+      # 2. Setup Node
+      # ---------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.19.5'
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Dependencies
+        run: npm install
 
+      # ---------------------------
+      # 3. Setup Java (only for Android)
+      # ---------------------------
       - name: Setup Java
+        if: matrix.type == 'android'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Download Android cmdline-tools
+      # ---------------------------
+      # 4. Install Android SDK
+      # ---------------------------
+      - name: Install Android SDK (full)
+        if: matrix.type == 'android'
         run: |
-          sudo mkdir -p "$ANDROID_HOME/cmdline-tools"
-          cd "$ANDROID_HOME"
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-*.zip
-          sudo mv cmdline-tools cmdline-tools/latest
-          sudo chmod -R 777 $ANDROID_HOME
+          sudo apt-get update
+          sudo apt-get install unzip -y
 
-      - name: Add SDKmanager tools to PATH
-        run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
+          # Download CMD tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          mkdir -p $HOME/android-sdk
+          unzip cmdtools.zip -d $HOME/android-sdk
 
+          # Move to proper place
+          mkdir -p $HOME/android-sdk/cmdline-tools/latest
+          mv $HOME/android-sdk/cmdline-tools/* $HOME/android-sdk/cmdline-tools/latest
+
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
+
+      # ---------------------------
+      # 5. Install required SDK components
+      # ---------------------------
       - name: Install SDK Components
+        if: matrix.type == 'android'
         run: |
-          sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
+          sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64" "emulator"
 
+      # ---------------------------
+      # 6. Create AVD
+      # ---------------------------
       - name: Create AVD
-        run: |
-          echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64"
+        if: matrix.type == 'android'
+        run: echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64"
 
+      # ---------------------------
+      # 7. Start Emulator
+      # ---------------------------
       - name: Start Emulator
+        if: matrix.type == 'android'
         run: |
-          nohup emulator -avd test -no-snapshot -no-audio -no-window &
+          nohup $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -no-boot-anim &
+
+      # ---------------------------
+      # 8. Wait for Emulator Boot
+      # ---------------------------
+      - name: Wait for Emulator
+        if: matrix.type == 'android'
+        run: |
           adb wait-for-device
           adb devices
+          sleep 20
 
+      # ---------------------------
+      # 9. Setup Appium
+      # ---------------------------
       - name: Setup Appium
+        if: matrix.type == 'android'
         run: |
-          npm run setup:appium
-          npx appium --version
+          npm i -g appium
+          appium --version
 
-      - name: Run WDIO Tests
+      # ---------------------------
+      # 10. Run Tests
+      # ---------------------------
+      - name: Run Tests (Android / Browser)
         run: |
-          PLATFORM=android ENVIRONMENT=local npx wdio
+          if [ "${{ matrix.type }}" = "android" ]; then
+            PLATFORM=android ENVIRONMENT=local npx wdio
+          else
+            PLATFORM=browser ENVIRONMENT=local npx wdio
+          fi
 
-      - name: Upload test artifacts
+      # ---------------------------
+      # 11. Upload Allure Results
+      # ---------------------------
+      - name: Upload Allure Results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: android-artifacts
-          path: |
-            allure-results/
-            screenshots/
-            logs/
-
-      - name: Generate Allure Report
-        run: npm run report:allure || true
-
-  test-browser:
-    name: Run Tests (browser)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.19.5'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run browser tests
-        run: |
-          PLATFORM=browser ENVIRONMENT=local npx wdio
-
-      - name: Upload browser artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-artifacts
-          path: |
-            allure-results/
-            screenshots/
-            logs/
+          name: allure-results-${{ matrix.type }}
+          path: allure-results/
