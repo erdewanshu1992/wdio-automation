@@ -320,62 +320,84 @@
 
 
 
-name: Mobile Automation CI
+name: Mobile Automation CI/CD
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   android:
     name: Run Android Tests
     runs-on: ubuntu-latest
-
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
-      # ✔ No manual download needed
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # ---- INSTALL ANDROID SDK PROPERLY ----
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y unzip wget
 
-      # ✔ Create AVD using Google API 35
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+
+          echo "⬇️ Downloading Android commandline tools"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip
+
+          # FIX: correct folder structure (no nested cmdline-tools/latest/latest)
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools/* cmdline-tools/latest/
+
+          echo "📌 Setting environment variables"
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator" >> $GITHUB_ENV
+
+      # ---- INSTALL REQUIRED SDK COMPONENTS ----
+      - name: Install SDK Components
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64" "emulator"
+
+      # ---- CREATE & START EMULATOR ----
       - name: Create emulator
         run: |
-          echo "no" | avdmanager create avd \
-            --force --name test \
-            --device "pixel" \
-            --package "system-images;android-35;google_apis;x86_64"
+          echo "no" | avdmanager create avd --name test --package "system-images;android-35;google_apis;x86_64" --device "pixel"
 
-      - name: Start Emulator
+      - name: Start emulator
         run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window -no-audio -gpu swiftshader_indirect &
+          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
+
+      - name: Wait for emulator
+        run: |
           adb wait-for-device
           adb devices
+          sleep 30
 
-      - name: Setup Appium
+      # ---- RUN ANDROID WDIO ----
+      - name: Run Android WDIO Tests
         run: |
-          npm run setup:appium
+          PLATFORM=android ENVIRONMENT=local npx wdio
 
-      - name: Run WDIO Android Tests
-        run: |
-          PLATFORM=android ENVIRONMENT=local npx wdio run wdio.conf.js
-
+      # ---- UPLOAD RESULTS ----
       - name: Upload artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-test-results
+          name: android-results
           path: |
             allure-results/
             logs/
@@ -389,7 +411,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -397,15 +419,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run WDIO Browser Tests
-        run: |
-          PLATFORM=browser ENVIRONMENT=local npx wdio run wdio.conf.js
+      - name: Run Browser Tests
+        run: PLATFORM=browser npx wdio
 
-      - name: Upload Browser Artifacts
-        if: always()
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: browser-test-results
+          name: browser-results
           path: |
             allure-results/
             logs/
