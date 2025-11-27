@@ -190,7 +190,7 @@ jobs:
             }
 
             const comment = `
-            ## 🧪 Test Results
+            ## Test Results
 
             **Status:** ${summary.status || 'Unknown'}
             **Total Tests:** ${summary.total || 0}
@@ -199,7 +199,7 @@ jobs:
             **Broken:** ${summary.broken || 0}
             **Skipped:** ${summary.skipped || 0}
 
-            [📊 View Full Report](${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}})
+            [View Full Report](${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}})
             `;
 
             github.rest.issues.createComment({

@@ -11,7 +11,7 @@ class MobileGestures {
    * @param {number} y - Y coordinate
    */
   static async tap(x, y) {
-    console.log(`👉 Tap at (${x}, ${y})`);
+    console.log(`Tap at (${x}, ${y})`);
     await driver.execute('mobile: tap', { x, y });
   }
 
@@ -22,7 +22,7 @@ class MobileGestures {
   static async tapOnElement(element) {
     await element.waitForDisplayed({ timeout: 5000 });
     await element.click();
-    console.log(`👉 Tapped on element: ${await element.selector}`);
+    console.log(`Tapped on element: ${await element.selector}`);
   }
 
   /**
@@ -30,7 +30,7 @@ class MobileGestures {
    * Works for both Android & iOS
    */
   static async swipe(startX, startY, endX, endY, duration = 1000) {
-    console.log(`👉 Swiping from (${startX}, ${startY}) → (${endX}, ${endY})`);
+    console.log(`Swiping from (${startX}, ${startY}) → (${endX}, ${endY})`);
     await driver.execute('mobile: dragFromToForDuration', {
       duration: duration / 1000, // Appium expects seconds
       fromX: startX,
@@ -58,7 +58,7 @@ class MobileGestures {
   static async swipeUpNTimes(times = 1) {
     for (let i = 0; i < times; i++) {
       await driver.execute('mobile: swipe', { direction: 'up' });
-      console.log(`📱 Swiped up (${i + 1}/${times})`);
+      console.log(`Swiped up (${i + 1}/${times})`);
       await driver.pause(1000);
     }
   }
@@ -81,7 +81,7 @@ class MobileGestures {
   static async swipeDownNTimes(times = 1) {
     for (let i = 0; i < times; i++) {
       await driver.execute('mobile: swipe', { direction: 'down' });
-      console.log(`📱 Swiped down (${i + 1}/${times})`);
+      console.log(`Swiped down (${i + 1}/${times})`);
       await driver.pause(1000);
     }
   }
@@ -112,7 +112,7 @@ class MobileGestures {
    * Long press on element or coordinates
    */
   static async longPress(x, y, duration = 2000) {
-    console.log(`👉 Long press at (${x}, ${y}) for ${duration}ms`);
+    console.log(`Long press at (${x}, ${y}) for ${duration}ms`);
     await driver.performActions([
       {
         type: 'pointer',
@@ -135,11 +135,11 @@ class MobileGestures {
    */
   static async doubleTap(element) {
     if (!driver.isIOS) {
-      console.warn('⚠️ doubleTap is iOS only!');
+      console.warn('doubleTap is iOS only!');
       return;
     }
     await driver.execute('mobile: doubleTap', { elementId: element.elementId });
-    console.log('👆 Double tapped element');
+    console.log('Double tapped element');
   }
 
   /**
@@ -153,7 +153,7 @@ class MobileGestures {
       elementId: element.elementId,
       duration: durationMs,
     });
-    console.log(`✋ Long pressed element for ${durationMs}ms`);
+    console.log(`Long pressed element for ${durationMs}ms`);
   }
 
   /**
@@ -163,7 +163,7 @@ class MobileGestures {
    */
   static async scrollUntilVisible(text, direction = 'down') {
     if (!driver.isIOS) {
-      console.warn('⚠️ scroll with predicate is iOS only!');
+      console.warn('scroll with predicate is iOS only!');
       return;
     }
     const scrollObject = {
@@ -171,7 +171,7 @@ class MobileGestures {
       predicateString: `label == '${text}'`,
     };
     await driver.execute('mobile: scroll', scrollObject);
-    console.log(`📜 Scrolled ${direction} until element with label "${text}" was visible`);
+    console.log(`Scrolled ${direction} until element with label "${text}" was visible`);
   }
 
   /**
@@ -180,7 +180,7 @@ class MobileGestures {
    */
   // static async swipe(direction = 'up') {
   //     await driver.execute('mobile: swipe', { direction });
-  //     console.log(`📱 Swiped ${direction}`);
+  //     console.log(`Swiped ${direction}`);
   // }
 
   /**
@@ -190,7 +190,7 @@ class MobileGestures {
    */
   static async tapCoordinate(x, y) {
     await driver.execute('mobile: tap', { x, y });
-    console.log(`👉 Tapped at coordinates (${x}, ${y})`);
+    console.log(`Tapped at coordinates (${x}, ${y})`);
   }
 
   /**
@@ -201,7 +201,7 @@ class MobileGestures {
    * @param {number} height - height of signature
    */
   static async drawSignature(startX = 50, startY = 300, width = 300, height = 100) {
-    console.log('🖋 Drawing signature...');
+    console.log('Drawing signature...');
     const steps = 5;
     const xStep = width / steps;
     const yStep = height / steps;
@@ -231,7 +231,7 @@ class MobileGestures {
       },
     ]);
     await driver.releaseActions();
-    console.log('✅ Signature drawn');
+    console.log('Signature drawn');
   }
 
   /**
@@ -239,7 +239,7 @@ class MobileGestures {
    * @param {'in'|'out'} type
    */
   static async pinchOrZoom(type = 'in') {
-    console.log(`🔍 Performing ${type === 'in' ? 'pinch' : 'zoom'}`);
+    console.log(`Performing ${type === 'in' ? 'pinch' : 'zoom'}`);
 
     const { width, height } = await driver.getWindowRect();
     const centerX = width / 2;

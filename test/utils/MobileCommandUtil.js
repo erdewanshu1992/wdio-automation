@@ -12,7 +12,7 @@ class MobileCommandUtil {
   static async swipeUpNTimes(times = 1) {
     for (let i = 0; i < times; i++) {
       await driver.execute('mobile: swipe', { direction: 'up' });
-      console.log(`📱 Swiped up (${i + 1}/${times})`);
+      console.log(`Swiped up (${i + 1}/${times})`);
       await driver.pause(1000);
     }
   }
@@ -24,7 +24,7 @@ class MobileCommandUtil {
   static async swipeDownNTimes(times = 1) {
     for (let i = 0; i < times; i++) {
       await driver.execute('mobile: swipe', { direction: 'down' });
-      console.log(`📱 Swiped down (${i + 1}/${times})`);
+      console.log(`Swiped down (${i + 1}/${times})`);
       await driver.pause(1000);
     }
   }
@@ -36,7 +36,7 @@ class MobileCommandUtil {
    */
   static async tapCoordinate(x, y) {
     await driver.execute('mobile: tap', { x, y });
-    console.log(`👉 Tapped at coordinates (${x}, ${y})`);
+    console.log(`Tapped at coordinates (${x}, ${y})`);
   }
 
   // /**
@@ -46,7 +46,7 @@ class MobileCommandUtil {
   // static async tapOnElement(element) {
   //     await element.waitForDisplayed({ timeout: 5000 });
   //     await driver.execute('mobile: tap', { elementId: element.elementId });
-  //     console.log(`👉 Tapped element: ${await element.selector}`);
+  //     console.log(`Tapped element: ${await element.selector}`);
   // }
 
   /**
@@ -60,7 +60,7 @@ class MobileCommandUtil {
     const centerY = rect.y + rect.height / 2;
 
     await driver.execute('mobile: tap', { x: centerX, y: centerY });
-    console.log(`👉 Tapped element center at (${centerX}, ${centerY})`);
+    console.log(`Tapped element center at (${centerX}, ${centerY})`);
   }
 
   /**
@@ -74,7 +74,7 @@ class MobileCommandUtil {
       elementId: element.elementId,
       duration: durationMs,
     });
-    console.log(`✋ Long pressed element for ${durationMs}ms`);
+    console.log(`Long pressed element for ${durationMs}ms`);
   }
 
   /**
@@ -84,14 +84,14 @@ class MobileCommandUtil {
    */
   static async longPressTouchAndHold(element, seconds = 2) {
     if (!driver.isIOS) {
-      console.warn('⚠️ touchAndHold is iOS only!');
+      console.warn('touchAndHold is iOS only!');
       return;
     }
     await driver.execute('mobile: touchAndHold', {
       elementId: element.elementId,
       duration: seconds,
     });
-    console.log(`✋ touchAndHold on element for ${seconds}s`);
+    console.log(`touchAndHold on element for ${seconds}s`);
   }
 
   /**
@@ -100,11 +100,11 @@ class MobileCommandUtil {
    */
   static async doubleTap(element) {
     if (!driver.isIOS) {
-      console.warn('⚠️ doubleTap is iOS only!');
+      console.warn('doubleTap is iOS only!');
       return;
     }
     await driver.execute('mobile: doubleTap', { elementId: element.elementId });
-    console.log('👆 Double tapped element');
+    console.log('Double tapped element');
   }
 
   /**
@@ -116,7 +116,7 @@ class MobileCommandUtil {
     const centerX = rect.x + rect.width / 2;
     const centerY = rect.y + rect.height / 2;
     await driver.execute('mobile: tap', { x: centerX, y: centerY });
-    console.log(`👉 Tapped element center at (${centerX}, ${centerY})`);
+    console.log(`Tapped element center at (${centerX}, ${centerY})`);
   }
 
   /**
@@ -126,7 +126,7 @@ class MobileCommandUtil {
    */
   static async scrollUntilVisible(text, direction = 'down') {
     if (!driver.isIOS) {
-      console.warn('⚠️ scroll with predicate is iOS only!');
+      console.warn('scroll with predicate is iOS only!');
       return;
     }
     const scrollObject = {
@@ -134,7 +134,7 @@ class MobileCommandUtil {
       predicateString: `label == '${text}'`,
     };
     await driver.execute('mobile: scroll', scrollObject);
-    console.log(`📜 Scrolled ${direction} until element with label "${text}" was visible`);
+    console.log(`Scrolled ${direction} until element with label "${text}" was visible`);
   }
 
   /**
@@ -143,7 +143,7 @@ class MobileCommandUtil {
    */
   static async swipe(direction = 'up') {
     await driver.execute('mobile: swipe', { direction });
-    console.log(`📱 Swiped ${direction}`);
+    console.log(`Swiped ${direction}`);
   }
 }
 
