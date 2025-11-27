@@ -320,79 +320,7 @@
 
 
 
-# name: Mobile Automation CI
-
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-
-# jobs:
-#   android-tests:
-#     name: Run Android Tests
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-
-#       - name: Install Dependencies
-#         run: npm ci
-
-#       - name: Run Android Emulator + WDIO Tests
-#         uses: reactivecircus/android-emulator-runner@v2
-#         with:
-#           api-level: 35
-#           target: google_apis
-#           arch: x86_64
-#           profile: pixel_6
-#           emulator-options: -no-window -no-audio -gpu swiftshader_indirect
-#           script: |
-#             echo "Running WDIO Android tests..."
-#             PLATFORM=android ENVIRONMENT=local npx wdio
-
-#       - name: Upload Allure Results
-#         uses: actions/upload-artifact@v4
-#         if: always()
-#         with:
-#           name: allure-results-android
-#           path: allure-results/
-
-#   browser-tests:
-#     name: Run Browser Tests
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-
-#       - name: Install Dependencies
-#         run: npm ci
-
-#       - name: Run Browser Tests
-#         run: |
-#           PLATFORM=browser npx wdio
-
-#       - name: Upload Allure Results
-#         uses: actions/upload-artifact@v4
-#         if: always()
-#         with:
-#           name: allure-results-browser
-#           path: allure-results/
-
-
-
-name: Android + Browser CI
+name: Mobile Automation CI
 
 on:
   push:
@@ -401,117 +329,63 @@ on:
     branches: [ main ]
 
 jobs:
-  android:
+  android-tests:
     name: Run Android Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 25
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: '20'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Run Android Emulator + WDIO Tests
+        uses: reactivecircus/android-emulator-runner@v2
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -no-audio -gpu swiftshader_indirect
+          script: |
+            echo "Running WDIO Android tests..."
+            PLATFORM=android ENVIRONMENT=local npx wdio
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install System Images + Platform Tools
-        run: |
-          sdkmanager "platform-tools" \
-                     "platforms;android-35" \
-                     "system-images;android-35;google_apis;x86_64"
-
-      - name: Create emulator
-        run: echo "no" | avdmanager create avd \
-            -n test \
-            -k "system-images;android-35;google_apis;x86_64" \
-            -d pixel
-
-      - name: Start emulator
-        run: |
-          sudo /usr/local/lib/android/sdk/emulator/emulator \
-          -avd test -no-window -no-audio -gpu swiftshader_indirect -no-snapshot &
-
-          adb wait-for-device
-          adb shell settings put global window_animation_scale 0 &
-          adb shell settings put global transition_animation_scale 0 &
-          adb shell settings put global animator_duration_scale 0 &
-
-          # Wait for boot complete
-          for i in {1..60}; do
-            booted=$(adb shell getprop sys.boot_completed 2>/dev/null)
-            if [ "$booted" = "1" ]; then
-              echo "Emulator booted!"
-              break
-            fi
-            echo "Waiting for emulator..."
-            sleep 5
-          done
-
-      - name: Run WDIO Tests
-        run: PLATFORM=android ENVIRONMENT=local npx wdio run wdio.conf.js
-        continue-on-error: true
-
-      - name: Upload artifacts
+      - name: Upload Allure Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: android-artifacts
-          path: |
-            test-results/
-            allure-results/
-            logs/
-            screenshots/
+          name: allure-results-android
+          path: allure-results/
 
-  browser:
+  browser-tests:
     name: Run Browser Tests
     runs-on: ubuntu-latest
-    needs: android
-    timeout-minutes: 10
-
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: '20'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@v1
+      - name: Run Browser Tests
+        run: |
+          PLATFORM=browser npx wdio
 
-      - name: Install Chromedriver
-        uses: nanasess/setup-chromedriver@v2
-
-      - name: Run Browser tests
-        run: PLATFORM=browser ENVIRONMENT=local npx wdio run wdio.conf.js
-        continue-on-error: true
-
-      - name: Upload artifacts
+      - name: Upload Allure Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: browser-artifacts
-          path: |
-            test-results/
-            allure-results/
-            logs/
-            screenshots/
+          name: allure-results-browser
+          path: allure-results/
