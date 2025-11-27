@@ -66,6 +66,14 @@ pipeline {
             steps {
                 script {
 
+                    if (params.TEST_TYPE == 'all') {
+                        sh 'PLATFORM=browser npx wdio'
+                        sh 'PLATFORM=android ENVIRONMENT=local npx wdio'
+                        sh 'PLATFORM=android MOBILE_WEB=true npx wdio'
+                        sh 'PLATFORM=ios npx wdio'
+                        sh 'PLATFORM=ios MOBILE_WEB=true npx wdio'
+                    }
+
                     if (params.TEST_TYPE == 'browser') {
                         sh 'PLATFORM=browser npx wdio'
                     }
