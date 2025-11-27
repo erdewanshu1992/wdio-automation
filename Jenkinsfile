@@ -22,28 +22,12 @@ pipeline {
 
     stages {
 
-        // stage('Check ADB') {
-        //     steps {
-        //         sh 'which adb || true'
-        //         sh 'adb devices || true'
-        //     }
-        // }
-
-        stage('Fix Android PATH') {
+        stage('Check ADB') {
             steps {
-                sh '''
-                    export ANDROID_HOME=$HOME/Library/Android/sdk
-                    export PATH=$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH
-
-                    echo "PATH after fix:"
-                    echo $PATH
-
-                    echo "ADB version:"
-                    adb version || echo "ADB still not found!"
-                '''
+                sh 'which adb || true'
+                sh 'adb devices || true'
             }
         }
-
 
         stage('Check iOS Environment') {
             steps {
