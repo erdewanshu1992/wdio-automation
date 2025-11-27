@@ -82,59 +82,59 @@ A comprehensive, enterprise-grade mobile automation framework built with WebDriv
 
 ## Project Structure
 
-├── .github/workflows/          # CI/CD workflows
-│   └── ci.yml                  # GitHub Actions CI/CD pipeline
-├── .husky/                     # Git hooks
-│   └── pre-commit              # Pre-commit linting hook
-├── app/                        # Mobile app files
-│   ├── android/                # Android APK files
-│   └── iOS/                    # iOS app files
+├── .github/workflows/ # CI/CD workflows
+│ └── ci.yml # GitHub Actions CI/CD pipeline
+├── .husky/ # Git hooks
+│ └── pre-commit # Pre-commit linting hook
+├── app/ # Mobile app files
+│ ├── android/ # Android APK files
+│ └── iOS/ # iOS app files
 ├── test/
-│   ├── commands/               # Custom WebDriverIO commands
-│   │   └── enhanced-commands.js # Enhanced custom commands
-│   ├── config/                 # Configuration files
-│   │   ├── base.config.js      # Base configuration class
-│   │   ├── devices.js          # Device configurations
-│   │   ├── environment.android.js # Android environment config
-│   │   ├── environment.ios.js  # iOS environment config
-│   │   └── environment.browser.js # Browser environment config
-│   ├── data/                   # Test data management
-│   │   ├── base-test-data.json # Base test data
-│   │   ├── local-test-data.json # Local environment data
-│   │   └── TestDataManager.js  # Test data manager
-│   ├── screenObjects/          # Page Object Model
-│   │   ├── base/               # Base page classes
-│   │   │   └── BasePage.js     # Base page functionality
-│   │   ├── android/            # Android-specific pages
-│   │   │   ├── LoginScreen.js  # Login screen page object
-│   │   │   └── HomeScreen.js   # Home screen page object
-│   │   └── iOS/                # iOS-specific pages
-│   ├── specs/                  # Test specifications
-│   │   ├── android/            # Android test suites
-│   │   │   └── user-requirements-test.spec.js
-│   │   ├── iOS/                # iOS test suites
-│   │   │   └── user-requirements-test.spec.js
-│   │   ├── android-mobile-web/ # Android mobile web tests
-│   │   ├── ios-mobile-web/     # iOS mobile web tests
-│   │   └── browser/            # Browser tests
-│   ├── testObjects/            # Test base classes
-│   │   └── BaseTest.js         # Base test functionality
-│   └── utils/                  # Utility functions
-│       ├── MobileCommandUtil.js
-│       └── mobileGestures.js
-├── test-results/               # Test execution results
-├── logs/                       # Application logs
-├── screenshots/                # Screenshots
-├── Dockerfile                  # Docker configuration
-├── docker-compose.yml          # Docker Compose setup
-├── wdio.conf.js                # WebDriverIO configuration
-├── tsconfig.json               # TypeScript configuration
-├── .eslintrc.cjs               # ESLint configuration
-├── .prettierrc.cjs             # Prettier configuration
-├── .prettierignore             # Prettier ignore patterns
-├── .gitignore                  # Git ignore patterns
-├── package.json                # Project dependencies and scripts
-└── README.md                   # This documentation
+│ ├── commands/ # Custom WebDriverIO commands
+│ │ └── enhanced-commands.js # Enhanced custom commands
+│ ├── config/ # Configuration files
+│ │ ├── base.config.js # Base configuration class
+│ │ ├── devices.js # Device configurations
+│ │ ├── environment.android.js # Android environment config
+│ │ ├── environment.ios.js # iOS environment config
+│ │ └── environment.browser.js # Browser environment config
+│ ├── data/ # Test data management
+│ │ ├── base-test-data.json # Base test data
+│ │ ├── local-test-data.json # Local environment data
+│ │ └── TestDataManager.js # Test data manager
+│ ├── screenObjects/ # Page Object Model
+│ │ ├── base/ # Base page classes
+│ │ │ └── BasePage.js # Base page functionality
+│ │ ├── android/ # Android-specific pages
+│ │ │ ├── LoginScreen.js # Login screen page object
+│ │ │ └── HomeScreen.js # Home screen page object
+│ │ └── iOS/ # iOS-specific pages
+│ ├── specs/ # Test specifications
+│ │ ├── android/ # Android test suites
+│ │ │ └── user-requirements-test.spec.js
+│ │ ├── iOS/ # iOS test suites
+│ │ │ └── user-requirements-test.spec.js
+│ │ ├── android-mobile-web/ # Android mobile web tests
+│ │ ├── ios-mobile-web/ # iOS mobile web tests
+│ │ └── browser/ # Browser tests
+│ ├── testObjects/ # Test base classes
+│ │ └── BaseTest.js # Base test functionality
+│ └── utils/ # Utility functions
+│ ├── MobileCommandUtil.js
+│ └── mobileGestures.js
+├── test-results/ # Test execution results
+├── logs/ # Application logs
+├── screenshots/ # Screenshots
+├── Dockerfile # Docker configuration
+├── docker-compose.yml # Docker Compose setup
+├── wdio.conf.js # WebDriverIO configuration
+├── tsconfig.json # TypeScript configuration
+├── .eslintrc.cjs # ESLint configuration
+├── .prettierrc.cjs # Prettier configuration
+├── .prettierignore # Prettier ignore patterns
+├── .gitignore # Git ignore patterns
+├── package.json # Project dependencies and scripts
+└── README.md # This documentation
 
 ## Configuration
 
@@ -412,14 +412,14 @@ import LoginScreen from '../screenObjects/android/LoginScreen';
 ### Industry Standard POM Structure
 
 PageObjectName.js
-├── get selectors()          # All element locators
-│   └── elementName: 'locator'
-├── get strings()            # All string constants
-│   └── constantName: 'value'
-├── get elementName()        # Element getters
-│   └── return $(selector)
-└── async methodName()       # Business actions
-    └── await element.action()
+├── get selectors() # All element locators
+│ └── elementName: 'locator'
+├── get strings() # All string constants
+│ └── constantName: 'value'
+├── get elementName() # Element getters
+│ └── return $(selector)
+└── async methodName() # Business actions
+└── await element.action()
 
 ### Adding Custom Commands
 

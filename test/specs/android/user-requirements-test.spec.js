@@ -9,7 +9,7 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
 
   describe('Essential Login Flow', () => {
     it('should complete essential login flow with exact locators', async () => {
-        console.log('\x1b[34mStarting Enhanced Login Flow Test\x1b[0m');
+      console.log('\x1b[34mStarting Enhanced Login Flow Test\x1b[0m');
 
       // STEP 1: Verify mobile input field
       const mobileInput = await $('android=new UiSelector().resourceId("mobileNumber")');

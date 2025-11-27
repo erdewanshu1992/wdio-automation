@@ -246,11 +246,11 @@ class BaseTest {
 
     // ANSI color codes
     const colors = {
-      INFO: '\x1b[34m',    // Blue
-      WARN: '\x1b[33m',    // Yellow
-      ERROR: '\x1b[31m',   // Red
+      INFO: '\x1b[34m', // Blue
+      WARN: '\x1b[33m', // Yellow
+      ERROR: '\x1b[31m', // Red
       SUCCESS: '\x1b[32m', // Green
-      DEBUG: '\x1b[35m'    // Magenta
+      DEBUG: '\x1b[35m', // Magenta
     };
 
     const color = colors[level] || '\x1b[37m'; // White for unknown levels

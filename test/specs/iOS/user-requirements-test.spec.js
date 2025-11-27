@@ -9,9 +9,12 @@ describe('SwagLabs Mobile App - iOS Tests', () => {
   });
 
   beforeEach(async () => {
-    await browser.waitUntil(async () => {
-      return (await $('~test-Username')).isDisplayed();
-    }, { timeout: 10000 });
+    await browser.waitUntil(
+      async () => {
+        return (await $('~test-Username')).isDisplayed();
+      },
+      { timeout: 10000 }
+    );
     console.log('App ready');
   });
 
