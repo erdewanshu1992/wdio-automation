@@ -33,22 +33,23 @@ pipeline {
             steps {
                 sh '''
                     echo "Checking Xcode version..."
-                    xcodebuild -version || echo "❌ Xcode missing!"
+                    xcodebuild -version
 
+                    echo ""
                     echo "Checking simctl availability..."
-                    xcrun simctl list devices || echo "❌ simctl not found!"
+                    xcrun simctl list devices >/dev/null 2>&1 || echo "❌ simctl not found!"
 
-                    echo "Listing Booted Simulators:"
-                    xcrun simctl list devices | grep Booted || true
+                    echo ""
+                    echo "Booted iOS Simulators:"
+                    xcrun simctl list devices | grep Booted || echo "⚠️ No simulator currently booted!"
 
-                    echo "Listing all available device types:"
-                    xcrun simctl list devicetypes
-
-                    echo "Listing runtimes:"
-                    xcrun simctl list runtimes
+                    echo ""
+                    echo "Available iOS Runtimes:"
+                    xcrun simctl list runtimes | grep iOS
                 '''
             }
         }
+
 
         stage('Check Node.js Version') {
             steps {
