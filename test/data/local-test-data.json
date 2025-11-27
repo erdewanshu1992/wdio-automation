@@ -1,0 +1,28 @@
+{
+  "users": {
+    "valid": {
+      "mobileNumber": "9855566677",
+      "otp": "2222",
+      "name": "Local Test User",
+      "email": "local@test.com"
+    }
+  },
+  "mobileNumbers": {
+    "valid": "9855566677",
+    "invalid": "1234567890"
+  },
+  "otp": {
+    "valid": "2222",
+    "invalid": "1111"
+  },
+  "appium": {
+    "host": "localhost",
+    "port": 4723,
+    "logLevel": "info"
+  },
+  "reporting": {
+    "enableScreenshots": true,
+    "enableVideo": false,
+    "generateAllureReport": true
+  }
+}

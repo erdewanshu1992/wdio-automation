@@ -1,0 +1,56 @@
+{
+  "users": {
+    "valid": {
+      "mobileNumber": "9855566677",
+      "otp": "2222",
+      "name": "Test User",
+      "email": "test@example.com"
+    },
+    "invalid": {
+      "mobileNumber": "1234567890",
+      "otp": "1111",
+      "name": "",
+      "email": "invalid-email"
+    },
+    "blocked": {
+      "mobileNumber": "9999999999",
+      "otp": "0000",
+      "name": "Blocked User",
+      "email": "blocked@example.com"
+    }
+  },
+  "mobileNumbers": {
+    "valid": "9855566677",
+    "invalid": "1234567890",
+    "blocked": "9999999999",
+    "startingWith6": "6123456789",
+    "startingWith7": "7123456789",
+    "startingWith8": "8123456789",
+    "startingWith9": "9123456789"
+  },
+  "otp": {
+    "valid": "2222",
+    "invalid": "1111",
+    "expired": "0000",
+    "singleDigit": "1",
+    "threeDigits": "123",
+    "fiveDigits": "12345"
+  },
+  "common": {
+    "defaultTimeout": 30000,
+    "defaultRetryCount": 3,
+    "screenshotOnFailure": true,
+    "enableLogging": true
+  },
+  "appData": {
+    "appPackage": "yesmadamservices.app.com.yesmadamservices",
+    "appActivity": "yesmadam.app.com.yesmadamservices.module.user.SplashActivity",
+    "appPath": "./app/android/YM_5July_v4.apk"
+  },
+  "deviceData": {
+    "platformName": "Android",
+    "platformVersion": "16.0",
+    "deviceName": "TestDevice",
+    "automationName": "UiAutomator2"
+  }
+}

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  appium:
+    image: appium/appium:latest
+    ports:
+      - "4723:4723"
+    environment:
+      - APPIUM_HOST=0.0.0.0
+      - APPIUM_PORT=4723
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+    privileged: true
+    networks:
+      - mobile-automation
+
+  mobile-tests:
+    build: .
+    depends_on:
+      - appium
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-local}
+      - PLATFORM=${PLATFORM:-android}
+      - APPIUM_HOST=appium
+      - APPIUM_PORT=4723
+    volumes:
+      - .:/app
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    working_dir: /app
+    networks:
+      - mobile-automation
+    command: npm run test:ci
+
+  selenium-hub:
+    image: selenium/hub:latest
+    ports:
+      - "4444:4444"
+    environment:
+      - GRID_MAX_SESSION=5
+      - GRID_BROWSER_TIMEOUT=30000
+    networks:
+      - mobile-automation
+
+  chrome-node:
+    image: selenium/node-chrome:latest
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_INSTANCES=3
+      - NODE_MAX_SESSION=3
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - mobile-automation
+    shm_size: 2gb
+
+  firefox-node:
+    image: selenium/node-firefox:latest
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_INSTANCES=3
+      - NODE_MAX_SESSION=3
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - mobile-automation
+    shm_size: 2gb
+
+networks:
+  mobile-automation:
+    driver: bridge
+
+volumes:
+  test-results:
+  allure-results:

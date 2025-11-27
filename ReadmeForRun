@@ -1,0 +1,48 @@
+HOW TO RUN
+Android native
+PLATFORM=android ENVIRONMENT=local npx wdio
+
+Android mobile web
+PLATFORM=android MOBILE_WEB=true npx wdio
+
+iOS mobile web
+PLATFORM=ios MOBILE_WEB=true npx wdio
+
+iOS native
+PLATFORM=ios npx wdio
+OR
+android
+PLATFORM=android npx wdio
+
+
+
+
+
+Browser
+PLATFORM=browser BROWSER=chrome npx wdio
+OR
+PLATFORM=browser BROWSER=firefox npx wdio
+OR
+PLATFORM=browser BROWSER=safari npx wdio
+
+RUN ALL TESTS
+PLATFORM=browser npx wdio
+
+
+
+qadew@DeWaNsHus-MacBook-Air wdio % tree test/specs
+
+test/specs
+├── android
+│   └── user-requirements-test.spec.js
+├── android-mobile-web
+│   └── open-new-tab.test.spec.js
+├── browser
+│   └── open-new-tab.test.spec.js
+├── iOS
+│   └── user-requirements-test.spec.js
+└── ios-mobile-web
+    └── open-new-tab.test.spec.js
+
+6 directories, 5 files
+qadew@DeWaNsHus-MacBook-Air wdio % 

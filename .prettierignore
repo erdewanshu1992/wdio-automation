@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Config files
+*.config.js
+*.config.cjs
+.eslintrc*
+.prettierrc*
+tsconfig.json
+wdio.conf.js
+
+# Test results
+test-results/
+allure-results/
+logs/
+screenshots/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Husky
+.husky/
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# CI/CD
+.github/
+
+# Package files
+package.json
+package-lock.json
+
+# Environment
+.env*

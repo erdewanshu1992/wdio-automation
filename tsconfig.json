@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["node", "@wdio/globals/types"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/test/*": ["./test/*"],
+      "@/commands/*": ["./test/commands/*"],
+      "@/pageObjects/*": ["./test/screenObjects/*"],
+      "@/utils/*": ["./test/utils/*"],
+      "@/data/*": ["./test/data/*"],
+      "@/config/*": ["./test/config/*"]
+    }
+  },
+  "include": [
+    "test/**/*.ts",
+    "test/**/*.js",
+    "wdio.conf.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "test-results",
+    "allure-results",
+    "logs",
+    "screenshots"
+  ]
+}

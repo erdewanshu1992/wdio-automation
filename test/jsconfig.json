@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./test",
+    "paths": {
+      "*": ["*"]
+    }
+  },
+  "include": ["../test"]
+}
