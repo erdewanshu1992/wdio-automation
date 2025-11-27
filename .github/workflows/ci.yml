@@ -109,7 +109,11 @@ jobs:
 
       - name: Run tests
         run: |
-          PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npm run test:ci
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npx wdio run wdio.conf.js --spec=./test/specs/android/**/*.js
+          elif [ "${{ matrix.platform }}" = "browser" ]; then
+            PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npx wdio run wdio.conf.js --spec=./test/specs/browser/**/*.js
+          fi
         continue-on-error: true
 
       - name: Upload test results
@@ -163,10 +167,16 @@ jobs:
         run: |
           # Combine all allure results
           mkdir -p combined-allure-results
-          find artifacts/ -name "allure-results-*" -type d -exec cp -r {}/* combined-allure-results/ \;
+          if [ -d "artifacts/" ]; then
+            find artifacts/ -name "allure-results-*" -type d -exec cp -r {}/* combined-allure-results/ \; 2>/dev/null || true
+          fi
 
-          # Generate final report
-          npx allure generate combined-allure-results --clean
+          # Generate final report if there are results
+          if [ -n "$(find combined-allure-results -name '*.json' 2>/dev/null)" ]; then
+            npx allure generate combined-allure-results --clean
+          else
+            echo "No test results found to generate report"
+          fi
 
       - name: Upload final report
         uses: actions/upload-artifact@v4
