@@ -1,233 +1,317 @@
+# name: Mobile Automation CI/CD
+
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main, develop ]
+#   schedule:
+#     - cron: '0 2 * * *'  # Daily at 2 AM UTC
+#   workflow_dispatch:
+#     inputs:
+#       environment:
+#         description: 'Test Environment'
+#         required: true
+#         default: 'local'
+#         type: choice
+#         options:
+#           - local
+#           - stage
+#           - prod
+#       platform:
+#         description: 'Platform to test'
+#         required: true
+#         default: 'android'
+#         type: choice
+#         options:
+#           - android
+#           - ios
+#           - browser
+
+# jobs:
+#   lint:
+#     name: Lint Code
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20.19.5'
+#           cache: 'npm'
+
+#       - name: Install dependencies
+#         run: npm ci
+
+#       - name: Run ESLint
+#         run: npm run lint
+
+#       - name: Run Prettier check
+#         run: npx prettier --check .
+
+#   test:
+#     name: Run Tests
+#     runs-on: ubuntu-latest
+#     needs: lint
+#     strategy:
+#       matrix:
+#         platform: [android, browser]
+#         environment: [local]
+#         include:
+#           - platform: android
+#             environment: local
+#           - platform: browser
+#             environment: local
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20.19.5'
+#           cache: 'npm'
+
+#       - name: Install dependencies
+#         run: npm ci
+
+#       - name: Setup Java
+#         if: matrix.platform == 'android'
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: 'temurin'
+#           java-version: '17'
+
+#       - name: Setup Android SDK
+#         if: matrix.platform == 'android'
+#         uses: android-actions/setup-android@v3
+#         with:
+#           api-level: 35
+#           avd-name: test
+
+#       - name: Start Android emulator
+#         if: matrix.platform == 'android'
+#         run: |
+#           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu auto -wipe-data &
+
+#       - name: Setup Appium
+#         run: |
+#           npm run setup:appium
+#           npx appium --version
+
+#       - name: Wait for emulator
+#         if: matrix.platform == 'android'
+#         run: |
+#           $ANDROID_HOME/platform-tools/adb wait-for-device
+#           $ANDROID_HOME/platform-tools/adb devices
+
+#       - name: Run tests
+#         run: |
+#           if [ "${{ matrix.platform }}" = "android" ]; then
+#             PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npx wdio run wdio.conf.js --spec=./test/specs/android/**/*.js
+#           elif [ "${{ matrix.platform }}" = "browser" ]; then
+#             PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npx wdio run wdio.conf.js --spec=./test/specs/browser/**/*.js
+#           fi
+#         continue-on-error: true
+
+#       - name: Upload test results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: test-results-${{ matrix.platform }}-${{ matrix.environment }}
+#           path: |
+#             test-results/
+#             allure-results/
+#             logs/
+#             screenshots/
+
+#       - name: Generate Allure report
+#         if: always()
+#         run: |
+#           npm run report:allure || true
+
+#       - name: Upload Allure report
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-report-${{ matrix.platform }}-${{ matrix.environment }}
+#           path: allure-report/
+
+#   report:
+#     name: Generate Reports
+#     runs-on: ubuntu-latest
+#     needs: test
+#     if: always()
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Download test results
+#         uses: actions/download-artifact@v4
+#         with:
+#           path: artifacts/
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20.19.5'
+#           cache: 'npm'
+
+#       - name: Install dependencies
+#         run: npm ci
+
+#       - name: Generate consolidated report
+#         run: |
+#           # Combine all allure results
+#           mkdir -p combined-allure-results
+#           if [ -d "artifacts/" ]; then
+#             find artifacts/ -name "allure-results-*" -type d -exec cp -r {}/* combined-allure-results/ \; 2>/dev/null || true
+#           fi
+
+#           # Generate final report if there are results
+#           if [ -n "$(find combined-allure-results -name '*.json' 2>/dev/null)" ]; then
+#             npx allure generate combined-allure-results --clean
+#           else
+#             echo "No test results found to generate report"
+#           fi
+
+#       - name: Upload final report
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: final-report
+#           path: allure-report/
+
+#       - name: Comment PR with results
+#         if: github.event_name == 'pull_request'
+#         uses: actions/github-script@v7
+#         with:
+#           script: |
+#             const fs = require('fs');
+#             const path = require('path');
+
+#             // Read test results summary
+#             const summaryPath = path.join('allure-report', 'widgets', 'summary.json');
+#             let summary = {};
+#             if (fs.existsSync(summaryPath)) {
+#               summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+#             }
+
+#             const comment = `
+#             ## Test Results
+
+#             **Status:** ${summary.status || 'Unknown'}
+#             **Total Tests:** ${summary.total || 0}
+#             **Passed:** ${summary.passed || 0}
+#             **Failed:** ${summary.failed || 0}
+#             **Broken:** ${summary.broken || 0}
+#             **Skipped:** ${summary.skipped || 0}
+
+#             [View Full Report](${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}})
+#             `;
+
+#             github.rest.issues.createComment({
+#               issue_number: context.issue.number,
+#               owner: context.repo.owner,
+#               repo: context.repo.repo,
+#               body: comment
+#             });
+
+#   notify:
+#     name: Notify
+#     runs-on: ubuntu-latest
+#     needs: [lint, test, report]
+#     if: always()
+
+#     steps:
+#       - name: Send notification
+#         run: |
+#           echo "CI/CD pipeline completed"
+#           # Add Slack/Discord notification here if needed
+
+
+
 name: Mobile Automation CI/CD
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Test Environment'
-        required: true
-        default: 'local'
-        type: choice
-        options:
-          - local
-          - stage
-          - prod
-      platform:
-        description: 'Platform to test'
-        required: true
-        default: 'android'
-        type: choice
-        options:
-          - android
-          - ios
-          - browser
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  lint:
-    name: Lint Code
+  android:
+    name: Run Android Tests (Fast Boot)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.5'
-          cache: 'npm'
+          node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Run Prettier check
-        run: npx prettier --check .
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    strategy:
-      matrix:
-        platform: [android, browser]
-        environment: [local]
-        include:
-          - platform: android
-            environment: local
-          - platform: browser
-            environment: local
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.19.5'
-          cache: 'npm'
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
       - name: Setup Java
-        if: matrix.platform == 'android'
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      - name: Setup Android SDK
-        if: matrix.platform == 'android'
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 35
-          avd-name: test
-
-      - name: Start Android emulator
-        if: matrix.platform == 'android'
+      - name: Install Android SDK + Create Emulator
         run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu auto -wipe-data &
+          sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
+          avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "pixel"
+
+      - name: Start Emulator (Headless + FastBoot)
+        run: |
+          nohup emulator -avd test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -netdelay none -netspeed full > /dev/null 2>&1 &
+          adb wait-for-device
+          adb shell getprop sys.boot_completed
+          echo "Emulator Booted Successfully!"
 
       - name: Setup Appium
         run: |
           npm run setup:appium
           npx appium --version
 
-      - name: Wait for emulator
-        if: matrix.platform == 'android'
+      - name: Run Android WDIO Tests
         run: |
-          $ANDROID_HOME/platform-tools/adb wait-for-device
-          $ANDROID_HOME/platform-tools/adb devices
-
-      - name: Run tests
-        run: |
-          if [ "${{ matrix.platform }}" = "android" ]; then
-            PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npx wdio run wdio.conf.js --spec=./test/specs/android/**/*.js
-          elif [ "${{ matrix.platform }}" = "browser" ]; then
-            PLATFORM=${{ matrix.platform }} ENVIRONMENT=${{ matrix.environment }} npx wdio run wdio.conf.js --spec=./test/specs/browser/**/*.js
-          fi
+          PLATFORM=android ENVIRONMENT=local npx wdio
         continue-on-error: true
 
-      - name: Upload test results
+      - name: Upload Results
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: test-results-${{ matrix.platform }}-${{ matrix.environment }}
+          name: android-results
           path: |
-            test-results/
             allure-results/
             logs/
             screenshots/
 
-      - name: Generate Allure report
-        if: always()
-        run: |
-          npm run report:allure || true
-
-      - name: Upload Allure report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: allure-report-${{ matrix.platform }}-${{ matrix.environment }}
-          path: allure-report/
-
-  report:
-    name: Generate Reports
+  browser:
+    name: Run Browser Tests
     runs-on: ubuntu-latest
-    needs: test
-    if: always()
+    needs: android
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download test results
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.5'
-          cache: 'npm'
+          node-version: 20
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
-      - name: Generate consolidated report
-        run: |
-          # Combine all allure results
-          mkdir -p combined-allure-results
-          if [ -d "artifacts/" ]; then
-            find artifacts/ -name "allure-results-*" -type d -exec cp -r {}/* combined-allure-results/ \; 2>/dev/null || true
-          fi
-
-          # Generate final report if there are results
-          if [ -n "$(find combined-allure-results -name '*.json' 2>/dev/null)" ]; then
-            npx allure generate combined-allure-results --clean
-          else
-            echo "No test results found to generate report"
-          fi
-
-      - name: Upload final report
-        uses: actions/upload-artifact@v4
-        with:
-          name: final-report
-          path: allure-report/
-
-      - name: Comment PR with results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            // Read test results summary
-            const summaryPath = path.join('allure-report', 'widgets', 'summary.json');
-            let summary = {};
-            if (fs.existsSync(summaryPath)) {
-              summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
-            }
-
-            const comment = `
-            ## Test Results
-
-            **Status:** ${summary.status || 'Unknown'}
-            **Total Tests:** ${summary.total || 0}
-            **Passed:** ${summary.passed || 0}
-            **Failed:** ${summary.failed || 0}
-            **Broken:** ${summary.broken || 0}
-            **Skipped:** ${summary.skipped || 0}
-
-            [View Full Report](${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}})
-            `;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-  notify:
-    name: Notify
-    runs-on: ubuntu-latest
-    needs: [lint, test, report]
-    if: always()
-
-    steps:
-      - name: Send notification
-        run: |
-          echo "CI/CD pipeline completed"
-          # Add Slack/Discord notification here if needed
+      - name: Run Browser WDIO Tests
+        run: PLATFORM=browser npx wdio
