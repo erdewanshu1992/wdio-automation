@@ -234,158 +234,158 @@
 
 
 
-# name: Mobile Automation CI/CD
-
-# on:
-#   workflow_dispatch:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-
-# jobs:
-#   android:
-#     name: Run Android Tests (Fast Boot)
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 30
-
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: 20
-
-#       - name: Install Dependencies
-#         run: npm ci
-
-#       - name: Setup Java
-#         uses: actions/setup-java@v4
-#         with:
-#           distribution: temurin
-#           java-version: 17
-
-#       - name: Install Android SDK + Create Emulator
-#         run: |
-#           sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
-#           avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "pixel"
-
-#       - name: Start Emulator (Headless + FastBoot)
-#         run: |
-#           nohup emulator -avd test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -netdelay none -netspeed full > /dev/null 2>&1 &
-#           adb wait-for-device
-#           adb shell getprop sys.boot_completed
-#           echo "Emulator Booted Successfully!"
-
-#       - name: Setup Appium
-#         run: |
-#           npm run setup:appium
-#           npx appium --version
-
-#       - name: Run Android WDIO Tests
-#         run: |
-#           PLATFORM=android ENVIRONMENT=local npx wdio
-#         continue-on-error: true
-
-#       - name: Upload Results
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: android-results
-#           path: |
-#             allure-results/
-#             logs/
-#             screenshots/
-
-#   browser:
-#     name: Run Browser Tests
-#     runs-on: ubuntu-latest
-#     needs: android
-
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: 20
-
-#       - name: Install Dependencies
-#         run: npm ci
-
-#       - name: Run Browser WDIO Tests
-#         run: PLATFORM=browser npx wdio
-
-
-
-
-
-name: Mobile Automation CI
+name: Mobile Automation CI/CD
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  android-tests:
-    name: Run Android Tests
+  android:
+    name: Run Android Tests (Fast Boot)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Android Emulator + WDIO Tests
-        uses: reactivecircus/android-emulator-runner@v2
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          emulator-options: -no-window -no-audio -gpu swiftshader_indirect
-          script: |
-            echo "Running WDIO Android tests..."
-            PLATFORM=android ENVIRONMENT=local npx wdio
+          distribution: temurin
+          java-version: 17
 
-      - name: Upload Allure Results
+      - name: Install Android SDK + Create Emulator
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
+          avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "pixel"
+
+      - name: Start Emulator (Headless + FastBoot)
+        run: |
+          nohup emulator -avd test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -netdelay none -netspeed full > /dev/null 2>&1 &
+          adb wait-for-device
+          adb shell getprop sys.boot_completed
+          echo "Emulator Booted Successfully!"
+
+      - name: Setup Appium
+        run: |
+          npm run setup:appium
+          npx appium --version
+
+      - name: Run Android WDIO Tests
+        run: |
+          PLATFORM=android ENVIRONMENT=local npx wdio
+        continue-on-error: true
+
+      - name: Upload Results
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: allure-results-android
-          path: allure-results/
+          name: android-results
+          path: |
+            allure-results/
+            logs/
+            screenshots/
 
-  browser-tests:
+  browser:
     name: Run Browser Tests
     runs-on: ubuntu-latest
+    needs: android
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Browser Tests
-        run: |
-          PLATFORM=browser npx wdio
+      - name: Run Browser WDIO Tests
+        run: PLATFORM=browser npx wdio
 
-      - name: Upload Allure Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: allure-results-browser
-          path: allure-results/
+
+
+
+
+# name: Mobile Automation CI
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   android-tests:
+#     name: Run Android Tests
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Android Emulator + WDIO Tests
+#         uses: reactivecircus/android-emulator-runner@v2
+#         with:
+#           api-level: 35
+#           target: google_apis
+#           arch: x86_64
+#           profile: pixel_6
+#           emulator-options: -no-window -no-audio -gpu swiftshader_indirect
+#           script: |
+#             echo "Running WDIO Android tests..."
+#             PLATFORM=android ENVIRONMENT=local npx wdio
+
+#       - name: Upload Allure Results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-results-android
+#           path: allure-results/
+
+#   browser-tests:
+#     name: Run Browser Tests
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Browser Tests
+#         run: |
+#           PLATFORM=browser npx wdio
+
+#       - name: Upload Allure Results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-results-browser
+#           path: allure-results/
