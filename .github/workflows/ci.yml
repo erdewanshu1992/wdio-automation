@@ -234,84 +234,240 @@
 
 
 
+# name: Mobile Automation CI/CD
+
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   android:
+#     name: Run Android Tests (Fast Boot)
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 30
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Setup Java
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: temurin
+#           java-version: 17
+
+#       - name: Install Android SDK + Create Emulator
+#         run: |
+#           sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
+#           avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "pixel"
+
+#       - name: Start Emulator (Headless + FastBoot)
+#         run: |
+#           nohup emulator -avd test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -netdelay none -netspeed full > /dev/null 2>&1 &
+#           adb wait-for-device
+#           adb shell getprop sys.boot_completed
+#           echo "Emulator Booted Successfully!"
+
+#       - name: Setup Appium
+#         run: |
+#           npm run setup:appium
+#           npx appium --version
+
+#       - name: Run Android WDIO Tests
+#         run: |
+#           PLATFORM=android ENVIRONMENT=local npx wdio
+#         continue-on-error: true
+
+#       - name: Upload Results
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: android-results
+#           path: |
+#             allure-results/
+#             logs/
+#             screenshots/
+
+#   browser:
+#     name: Run Browser Tests
+#     runs-on: ubuntu-latest
+#     needs: android
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Browser WDIO Tests
+#         run: PLATFORM=browser npx wdio
+
+
+
+
+
 name: Mobile Automation CI/CD
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  android:
-    name: Run Android Tests (Fast Boot)
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+
+    strategy:
+      matrix:
+        platform: [android, browser]
 
     steps:
-      - uses: actions/checkout@v4
+      # ---------------------
+      # 1. Checkout
+      # ---------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      # ---------------------
+      # 2. Setup Node
+      # ---------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20.19.5'
+          cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Setup Java
+      # ---------------------
+      # 3. Setup Java for Android
+      # ---------------------
+      - name: Setup Java (Android only)
+        if: matrix.platform == 'android'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Install Android SDK + Create Emulator
+      # ---------------------
+      # 4. Install Android SDK
+      # ---------------------
+      - name: Install Android SDK
+        if: matrix.platform == 'android'
         run: |
-          sdkmanager --install "platform-tools" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
-          avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "pixel"
+          sudo apt-get update -y
+          sudo apt-get install -y unzip wget
+          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O cmdtools.zip
+          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
+          sudo unzip cmdtools.zip -d /usr/lib/android-sdk/cmdline-tools
+          sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
 
-      - name: Start Emulator (Headless + FastBoot)
+          echo "export ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
+          echo "export PATH=\$PATH:\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator" >> $GITHUB_ENV
+
+      # ---------------------
+      # 5. Install required SDK packages
+      # ---------------------
+      - name: Install SDK Components
+        if: matrix.platform == 'android'
         run: |
-          nohup emulator -avd test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -netdelay none -netspeed full > /dev/null 2>&1 &
+          sdkmanager --install "platform-tools" \
+            "platforms;android-35" \
+            "system-images;android-35;google_apis;x86_64"
+
+      # ---------------------
+      # 6. Create Emulator
+      # ---------------------
+      - name: Create AVD
+        if: matrix.platform == 'android'
+        run: |
+          echo "no" | avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --device "Pixel_6"
+
+      # ---------------------
+      # 7. Start Emulator
+      # ---------------------
+      - name: Start Emulator
+        if: matrix.platform == 'android'
+        run: |
+          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -noaudio -no-window &
+          sleep 5
+
+      # ---------------------
+      # 8. Wait for Boot
+      # ---------------------
+      - name: Wait for emulator to boot
+        if: matrix.platform == 'android'
+        run: |
           adb wait-for-device
           adb shell getprop sys.boot_completed
-          echo "Emulator Booted Successfully!"
+          until adb shell getprop sys.boot_completed | grep "1"; do
+            echo "⏳ Waiting for emulator..."
+            sleep 5
+          done
+          echo "Emulator booted!"
 
+      # ---------------------
+      # 9. Setup Appium
+      # ---------------------
       - name: Setup Appium
         run: |
-          npm run setup:appium
+          npm run setup:appium || true
           npx appium --version
 
-      - name: Run Android WDIO Tests
+      # ---------------------
+      # 10. Run Tests
+      # ---------------------
+      - name: Run WDIO tests
         run: |
-          PLATFORM=android ENVIRONMENT=local npx wdio
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            PLATFORM=android ENVIRONMENT=local npx wdio
+          else
+            PLATFORM=browser ENVIRONMENT=local npx wdio
+          fi
         continue-on-error: true
 
-      - name: Upload Results
+      # ---------------------
+      # 11. Upload Results
+      # ---------------------
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: android-results
+          name: results-${{ matrix.platform }}
           path: |
             allure-results/
-            logs/
             screenshots/
+            logs/
 
-  browser:
-    name: Run Browser Tests
-    runs-on: ubuntu-latest
-    needs: android
+      # ---------------------
+      # 12. Generate Allure Report
+      # ---------------------
+      - name: Generate Allure Report
+        if: always()
+        run: |
+          npm run report:allure || true
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          node-version: 20
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Run Browser WDIO Tests
-        run: PLATFORM=browser npx wdio
+          name: allure-${{ matrix.platform }}
+          path: allure-report/
