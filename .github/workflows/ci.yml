@@ -95,7 +95,7 @@ jobs:
       - name: Start Android emulator
         if: matrix.platform == 'android'
         run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
+          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu auto -wipe-data &
 
       - name: Setup Appium
         run: |
