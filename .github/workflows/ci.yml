@@ -338,7 +338,7 @@ jobs:
         with:
           api-level: 36
           target: google_apis
-          arch: x86_64
+          arch: arm64-v8a
           profile: Pixel 9 Pro (2)
           emulator-options: -no-window -no-audio -gpu swiftshader_indirect -no-boot-anim -memory 2048 -cores 2 -qemu -enable-kvm
           disable-animations: true
