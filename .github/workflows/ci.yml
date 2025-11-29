@@ -336,10 +336,10 @@ jobs:
       - name: Run Android Emulator + WDIO Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: 36
           target: google_apis
           arch: x86_64
-          profile: pixel_6
+          profile: pixel 9 Pro
           emulator-options: -no-window -no-audio -gpu swiftshader_indirect -no-boot-anim -memory 2048 -cores 2 -qemu -enable-kvm
           disable-animations: true
           disable-spellchecker: true
@@ -353,7 +353,7 @@ jobs:
             echo "Waiting for emulator to be ready..."
             timeout 600 bash -c '
             while true; do
-              if adb devices | grep -q "emulator-5554.*device"; then
+              if adb devices | grep -q "emulator-5556.*device"; then
                 echo "Emulator is online"
                 break
               fi
