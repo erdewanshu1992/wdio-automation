@@ -236,6 +236,78 @@
 
 
 
+# name: Mobile Automation CI
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   android-tests:
+#     name: Run Android Tests
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Android Emulator + WDIO Tests
+#         uses: reactivecircus/android-emulator-runner@v2
+#         with:
+#           api-level: 35
+#           target: google_apis
+#           arch: x86_64
+#           profile: pixel_6
+#           emulator-options: -no-window -no-audio -gpu swiftshader_indirect
+#           script: |
+#             echo "Running WDIO Android tests..."
+#             PLATFORM=android ENVIRONMENT=local npx wdio
+
+#       - name: Upload Allure Results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-results-android
+#           path: allure-results/
+
+#   browser-tests:
+#     name: Run Browser Tests
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+
+#       - name: Install Dependencies
+#         run: npm ci
+
+#       - name: Run Browser Tests
+#         run: |
+#           PLATFORM=browser npx wdio
+
+#       - name: Upload Allure Results
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: allure-results-browser
+#           path: allure-results/
+
+
+
 name: Mobile Automation CI
 
 on:
@@ -268,9 +340,17 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          emulator-options: -no-window -no-audio -gpu swiftshader_indirect
+          emulator-options: -no-window -no-audio -gpu auto -no-boot-anim -memory 2048 -cores 2
+          disable-animations: true
+          disable-spellchecker: true
+          emulator-boot-timeout: 1200
           script: |
-            echo "Running WDIO Android tests..."
+            echo "Waiting for emulator to be ready..."
+            adb wait-for-device
+            adb devices
+            echo "Checking boot completion..."
+            timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed)" = "1" ]; do sleep 5; done'
+            echo "Emulator ready, running WDIO Android tests..."
             PLATFORM=android ENVIRONMENT=local npx wdio
 
       - name: Upload Allure Results
