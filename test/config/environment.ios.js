@@ -2,6 +2,7 @@ import BaseConfig from './base.config.js';
 import { existsSync, readdirSync } from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import chalk from 'chalk';
 
 // Find latest IPA/ZIP
 function getIPA() {
@@ -52,8 +53,8 @@ export default new BaseConfig({
 
       console.log(
         installed
-          ? `\x1b[32mApp already installed on ${device.name} — launching via bundleId\x1b[0m`
-          : `\x1b[33mInstalling app on ${device.name} from IPA\x1b[0m`
+          ? chalk.green(`App already installed on ${device.name} — launching via bundleId`)
+          : chalk.yellow(`Installing app on ${device.name} from IPA`)
       );
 
       return installed

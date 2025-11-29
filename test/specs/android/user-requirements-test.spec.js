@@ -1,5 +1,6 @@
 import { $ } from '@wdio/globals';
 import LoginScreen from '../../screenObjects/android/LoginScreen.js';
+import chalk from 'chalk';
 
 describe('Enhanced Login Screen - Clean & Focused', () => {
   beforeEach(async () => {
@@ -9,7 +10,7 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
 
   describe('Essential Login Flow', () => {
     it('should complete essential login flow with exact locators', async () => {
-      console.log('\x1b[34mStarting Enhanced Login Flow Test\x1b[0m');
+      console.log(chalk.blue('Starting Enhanced Login Flow Test'));
 
       // STEP 1: Verify mobile input field
       const mobileInput = await $('android=new UiSelector().resourceId("mobileNumber")');
@@ -24,7 +25,7 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
 
       // Wait for potential UI changes after clicking Get OTP
       await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('\x1b[32mLOGIN FLOW COMPLETED\x1b[0m');
+      console.log(chalk.green('LOGIN FLOW COMPLETED'));
     });
 
     it('should test individual components', async () => {
@@ -48,9 +49,9 @@ describe('Enhanced Login Screen - Clean & Focused', () => {
       valid.forEach(n => expect(LoginScreen.isValidMobileNumber(n)).toBe(true));
       invalid.forEach(n => expect(LoginScreen.isValidMobileNumber(n)).toBe(false));
 
-      console.log('\x1b[32mnumber validation done\x1b[0m');
+      console.log(chalk.green('number validation done'));
     });
   });
 
-  after(() => console.log('\x1b[32mAndroid test session completed\x1b[0m'));
+  after(() => console.log(chalk.green('Android test session completed')));
 });

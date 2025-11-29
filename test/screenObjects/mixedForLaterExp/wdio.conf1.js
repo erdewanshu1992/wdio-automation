@@ -2,6 +2,7 @@ import { existsSync, mkdirSync } from 'fs';
 import EnvironmentConfig from '../../config/environment.android.js';
 import EnvironmentConfigIOS from '../../config/environment.ios.js';
 import EnvironmentConfigBrowser from '../../config/environment.browser.js';
+import chalk from 'chalk';
 
 /**
  * Enhanced WebDriverIO Configuration
@@ -42,11 +43,11 @@ if (isIOS) {
   envName = EnvironmentConfig.getEnvironmentName();
 }
 
-console.log(`\x1b[34mStarting WebDriverIO tests in ${envName.toUpperCase()} environment\x1b[0m`);
+console.log(chalk.blue(`Starting WebDriverIO tests in ${envName.toUpperCase()} environment`));
 if (!isBrowser) {
-  console.log(`\x1b[36mAppium server: ${envConfig.appium.host}:${envConfig.appium.port}\x1b[0m`);
+  console.log(chalk.cyan(`Appium server: ${envConfig.appium.host}:${envConfig.appium.port}`));
 } else {
-  console.log(`\x1b[36mBrowser: ${envConfig.capabilities.browserName || 'Chrome'}\x1b[0m`);
+  console.log(chalk.cyan(`Browser: ${envConfig.capabilities.browserName || 'Chrome'}`));
 }
 
 /**
@@ -220,12 +221,12 @@ export const config = {
 
   // Hooks
   beforeSession: function (config, capabilities, specs) {
-    console.log('\x1b[34mSetting up test session...\x1b[0m');
-    console.log('\x1b[36mTest specs:\x1b[0m', specs);
+    console.log(chalk.blue('Setting up test session...'));
+    console.log(chalk.cyan('Test specs:'), specs);
   },
 
   before: async function (_capabilities, _specs, browser) {
-    console.log('\x1b[34mInitializing test environment...\x1b[0m');
+    console.log(chalk.blue('Initializing test environment...'));
 
     // Ensure required directories exist
     ensureDirectoriesExist();
@@ -240,11 +241,11 @@ export const config = {
       script: envConfig.timeouts.script,
     });
 
-    console.log('\x1b[32mTest environment ready\x1b[0m');
+    console.log(chalk.green('Test environment ready'));
   },
 
   beforeTest: async function (test) {
-    console.log(`\x1b[34mStarting test: ${test.title}\x1b[0m`);
+    console.log(chalk.blue(`Starting test: ${test.title}`));
 
     // Take screenshot at test start if enabled and session is valid
     if (envConfig.reporting.enableScreenshots) {
@@ -266,9 +267,9 @@ export const config = {
   },
 
   afterTest: async function (test, context, { error, duration, passed }) {
-    const statusColor = passed ? '\x1b[32m' : '\x1b[31m';
+    const statusColor = passed ? chalk.green : chalk.red;
     console.log(
-      `${statusColor}Test completed: ${test.title} | Status: ${passed ? 'PASSED' : 'FAILED'} | Duration: ${duration}ms\x1b[0m`
+      statusColor(`Test completed: ${test.title} | Status: ${passed ? 'PASSED' : 'FAILED'} | Duration: ${duration}ms`)
     );
 
     // Take screenshot on failure if session is valid
@@ -294,12 +295,12 @@ export const config = {
   afterHook: async function (test, context, { error }) {
     // Handle hook failures
     if (error) {
-      console.error(`\x1b[31mHook failed: ${error.message}\x1b[0m`);
+      console.error(chalk.red(`Hook failed: ${error.message}`));
     }
   },
 
   onComplete: async function (exitCode, config, capabilities, results) {
-    console.log('\x1b[32mTest execution completed\x1b[0m');
+    console.log(chalk.green('Test execution completed'));
 
     // Generate summary (handle cases where results might not be available)
     if (results && Array.isArray(results)) {
@@ -307,28 +308,28 @@ export const config = {
       const passedTests = results.filter(result => result.passed).length;
       const failedTests = totalTests - passedTests;
 
-      console.log(`\x1b[36mTest Summary:\x1b[0m`);
-      console.log(`   \x1b[37mTotal: ${totalTests}\x1b[0m`);
-      console.log(`   \x1b[32mPassed: ${passedTests}\x1b[0m`);
-      console.log(`   \x1b[31mFailed: ${failedTests}\x1b[0m`);
+      console.log(chalk.cyan('Test Summary:'));
+      console.log(`   ${chalk.white('Total:')} ${totalTests}`);
+      console.log(`   ${chalk.green('Passed:')} ${passedTests}`);
+      console.log(`   ${chalk.red('Failed:')} ${failedTests}`);
       console.log(
-        `   \x1b[36mSuccess Rate: ${totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(2) + '%' : 'N/A'}\x1b[0m`
+        chalk.cyan(`Success Rate: ${totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(2) + '%' : 'N/A'}`)
       );
     } else {
-      console.log('\x1b[33mTest results not available for summary\x1b[0m');
+      console.log(chalk.yellow('Test results not available for summary'));
     }
 
     // Environment-specific cleanup
     if (envConfig.reporting.enableScreenshots) {
-      console.log('\x1b[36mScreenshots saved to: ./test-results/screenshots/\x1b[0m');
+      console.log(chalk.cyan('Screenshots saved to: ./test-results/screenshots/'));
     }
 
-    console.log('\x1b[36mAllure results saved to: allure-results/\x1b[0m');
-    console.log('\x1b[36mJUnit results saved to: test-results/junit/\x1b[0m');
+    console.log(chalk.cyan('Allure results saved to: allure-results/'));
+    console.log(chalk.cyan('JUnit results saved to: test-results/junit/'));
   },
 
   onError: async function (error) {
-    console.error('\x1b[31mTest execution error:\x1b[0m', error.message);
+    console.error(chalk.red('Test execution error:'), error.message);
 
     // Take emergency screenshot if session is valid
     try {
@@ -337,7 +338,7 @@ export const config = {
       await browser.saveScreenshot(`./test-results/screenshots/error_${Date.now()}.png`);
     } catch (screenshotError) {
       console.error(
-        '\x1b[31mFailed to take error screenshot - session not available:\x1b[0m',
+        chalk.red('Failed to take error screenshot - session not available:'),
         screenshotError.message
       );
     }

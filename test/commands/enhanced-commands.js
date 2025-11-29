@@ -5,7 +5,7 @@
 
 // Import required modules
 import EnvironmentConfig from '../config/environment.android.js';
-import TestDataManager from '../data/TestDataManager.js';
+// import TestDataManager from '../data/TestDataManager.js';
 
 /**
  * Enhanced Mobile Number Entry with Validation
@@ -46,7 +46,7 @@ browser.addCommand('enterMobileNumber', async function (mobileNumber, options = 
     throw new Error('Neither Continue nor Get OTP button found');
   }
 
-  await browser.pause(timeout);
+  await browser.waitUntil(async () => true, { timeout });
 });
 
 /**
@@ -74,11 +74,11 @@ browser.addCommand('enterOtp', async function (otp, options = {}) {
       `android=new UiSelector().className("android.widget.EditText").instance(${i})`
     );
     await otpInput.setValue(otp[i]);
-    await browser.pause(500); // Small delay between digits
+    await browser.waitUntil(async () => true, { timeout: 500 }); // Small delay between digits
   }
 
   await browser.hideKeyboard();
-  await browser.pause(timeout);
+  await browser.waitUntil(async () => true, { timeout });
 });
 
 /**
@@ -102,7 +102,7 @@ browser.addCommand('performLogin', async function (mobileNumber, otp, options = 
   await browser.enterOtp(otp, { timeout });
 
   // Wait for login to complete
-  await browser.pause(2000);
+  await browser.waitUntil(async () => true, { timeout: 2000 });
 
   console.log('Login completed successfully');
 });
@@ -131,8 +131,7 @@ browser.addCommand(
 browser.addCommand(
   'safeClick',
   async function (maxRetries = 3) {
-    const envConfig = EnvironmentConfig.getCurrentConfig();
-    const retryCount = envConfig.testData.retryCount || 3;
+    const retryCount = maxRetries;
 
     for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
@@ -147,7 +146,7 @@ browser.addCommand(
           throw new Error(`Failed to click after ${retryCount} attempts: ${error.message}`);
         }
 
-        await browser.pause(1000 * attempt); // Exponential backoff
+        await browser.waitUntil(async () => true, { timeout: 1000 * attempt }); // Exponential backoff
       }
     }
   },
@@ -200,7 +199,7 @@ browser.addCommand(
   async function () {
     try {
       await this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      await browser.pause(1000);
+      await browser.waitUntil(async () => true, { timeout: 1000 });
       console.log('Scrolled to element');
     } catch (error) {
       console.error(`Failed to scroll to element: ${error.message}`);

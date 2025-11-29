@@ -2,6 +2,7 @@ import BaseConfig from './base.config.js';
 import { existsSync, readdirSync } from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import chalk from 'chalk';
 
 // detect APK in app/android folder
 function getAPK() {
@@ -54,8 +55,8 @@ export default new BaseConfig({
 
           console.log(
             installed
-              ? `\x1b[32mApp already installed on ${device.udid} — launching via appPackage\x1b[0m`
-              : `\x1b[33mApp not installed on ${device.udid} — installing APK\x1b[0m`
+              ? chalk.green(`App already installed on ${device.udid} — launching via appPackage`)
+              : chalk.yellow(`App not installed on ${device.udid} — installing APK`)
           );
 
           return installed

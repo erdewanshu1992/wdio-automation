@@ -2,6 +2,8 @@
  * Base Test Class
  * Provides common functionality for all test classes
  */
+import chalk from 'chalk';
+
 class BaseTest {
   constructor() {
     this.testData = {};
@@ -25,7 +27,7 @@ class BaseTest {
       // Ignore for mobile tests
     }
 
-    console.log('\x1b[32mTest setup completed\x1b[0m');
+    console.log(chalk.green('Test setup completed'));
   }
 
   /**
@@ -40,14 +42,14 @@ class BaseTest {
     // Clear test data
     this.testData = {};
 
-    console.log('\x1b[32mTest cleanup completed\x1b[0m');
+    console.log(chalk.green('Test cleanup completed'));
   }
 
   /**
    * Setup before test suite
    */
   async beforeSuite() {
-    console.log('\x1b[34mStarting test suite...\x1b[0m');
+    console.log(chalk.blue('Starting test suite...'));
 
     // Load environment-specific configuration
     this.loadEnvironmentConfig();
@@ -60,7 +62,7 @@ class BaseTest {
    * Cleanup after test suite
    */
   async afterSuite() {
-    console.log('\x1b[32mTest suite completed\x1b[0m');
+    console.log(chalk.green('Test suite completed'));
 
     // Generate final reports
     await this.generateFinalReport();
@@ -71,7 +73,7 @@ class BaseTest {
    */
   loadEnvironmentConfig() {
     const env = process.env.ENVIRONMENT || 'local';
-    console.log(`\x1b[36mLoading configuration for environment: ${env}\x1b[0m`);
+    console.log(chalk.cyan(`Loading configuration for environment: ${env}`));
 
     // Environment-specific settings can be loaded here
     switch (env) {
@@ -135,7 +137,7 @@ class BaseTest {
       const filepath = `${this.screenshotDir}/${filename}`;
 
       await browser.saveScreenshot(filepath);
-      console.log(`\x1b[32mScreenshot saved: ${filepath}\x1b[0m`);
+      console.log(chalk.green(`Screenshot saved: ${filepath}`));
 
       // Attach to Allure report
       if (global.allure) {
@@ -154,7 +156,7 @@ class BaseTest {
    * @param {Function} stepFunction - Function to execute
    */
   async addStep(stepName, stepFunction) {
-    console.log(`\x1b[36mStep: ${stepName}\x1b[0m`);
+    console.log(chalk.cyan(`Step: ${stepName}`));
 
     if (global.allure) {
       global.allure.startStep(stepName);
@@ -227,7 +229,7 @@ class BaseTest {
 
         if (attempt < maxRetries) {
           const delay = baseDelay * Math.pow(2, attempt - 1);
-          console.log(`\x1b[33mRetrying in ${delay}ms...\x1b[0m`);
+          console.log(chalk.yellow(`Retrying in ${delay}ms...`));
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -244,19 +246,18 @@ class BaseTest {
   log(level, message) {
     const timestamp = new Date().toISOString();
 
-    // ANSI color codes
+    // Chalk color functions
     const colors = {
-      INFO: '\x1b[34m', // Blue
-      WARN: '\x1b[33m', // Yellow
-      ERROR: '\x1b[31m', // Red
-      SUCCESS: '\x1b[32m', // Green
-      DEBUG: '\x1b[35m', // Magenta
+      INFO: chalk.blue,
+      WARN: chalk.yellow,
+      ERROR: chalk.red,
+      SUCCESS: chalk.green,
+      DEBUG: chalk.magenta,
     };
 
-    const color = colors[level] || '\x1b[37m'; // White for unknown levels
-    const reset = '\x1b[0m';
+    const color = colors[level] || chalk.white; // White for unknown levels
 
-    console.log(`${color}[${timestamp}] [${level}] ${message}${reset}`);
+    console.log(color(`[${timestamp}] [${level}] ${message}`));
 
     // Add to Allure report
     if (global.allure) {
